@@ -2,7 +2,7 @@
 
 As this library is targetting go developers, we cannot assume a properly set up
 rust environment on their system. Further, when importing this library, there is no
-clean way to add a `libwasmvm.{so,dll,dylib}`. It needs to be committed with the
+clean way to add a `libmovevm.{so,dll,dylib}`. It needs to be committed with the
 tagged (go) release in order to be easily usable.
 
 The solution is to precompile the rust code into libraries for the major platforms
@@ -16,7 +16,7 @@ can do the cross-compilation.
 
 **Version 0012:**
 
-- Add cross-compilation setup to build `libwasmvm.x86_64.so` and `libwasmvm.aarch64.so`
+- Add cross-compilation setup to build `libmovevm.x86_64.so` and `libmovevm.aarch64.so`
   from the CentOS builder image.
 - Update Rust to 1.60.0.
 
@@ -64,7 +64,7 @@ can do the cross-compilation.
 
 **Version 0002:**
 
-- Update hardcoded library name from `libgo_cosmwasm` to `libwasmvm`.
+- Update hardcoded library name from `libgo_cosmwasm` to `libmovevm`.
 
 **Version 0001:**
 

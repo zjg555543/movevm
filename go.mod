@@ -1,4 +1,4 @@
-module github.com/CosmWasm/wasmvm
+module github.com/zjg555543/movevm
 
 go 1.17
 

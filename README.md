@@ -16,7 +16,7 @@ link with, and Go developers should just be able to import this directly.
 
 Requires Rust 1.55+ and Go 1.17+.
 
-The Rust implementation of the VM is compiled to a library called libwasmvm. This is
+The Rust implementation of the VM is compiled to a library called libmovevm. This is
 then linked to the Go code when the final binary is built. For that reason not all
 systems supported by Go are supported by this project.
 
@@ -25,7 +25,7 @@ We are working on Windows (#288).
 
 [#288]: https://github.com/CosmWasm/wasmvm/pull/288
 
-### Builds of libwasmvm
+### Builds of libmovevm
 
 Our system currently supports the following builds. In general we can only support targets
 that are [supported by Wasmer's singlepass backend](https://docs.wasmer.io/ecosystem/wasmer/wasmer-features#compiler-support-by-chipset),
@@ -36,7 +36,7 @@ which for example excludes all 32 bit systems.
 | OS family       | Arch    | Linking | Supported                    | Note                                                                                                                                   |
 | --------------- | ------- | ------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | Linux (glibc)   | x86_64  | shared  | ✅​libwasmvm.x86_64.so       |                                                                                                                                        |
-| Linux (glibc)   | x86_64  | static  | 🚫​                          | Would link libwasmvm statically but glibc dynamically as static glibc linking is not recommended. Potentially interesting for Osmosis. |
+| Linux (glibc)   | x86_64  | static  | 🚫​                          | Would link libmovevm statically but glibc dynamically as static glibc linking is not recommended. Potentially interesting for Osmosis. |
 | Linux (glibc)   | aarch64 | shared  | ✅​libwasmvm.aarch64.so      |                                                                                                                                        |
 | Linux (glibc)   | aarch64 | static  | 🚫​                          |                                                                                                                                        |
 | Linux (musl)    | x86_64  | shared  | 🚫​                          | Possible but not needed                                                                                                                |
@@ -59,7 +59,7 @@ which for example excludes all 32 bit systems.
 
 ## Docs
 
-Run `(cd libwasmvm && cargo doc --no-deps --open)`.
+Run `(cd libmovevm && cargo doc --no-deps --open)`.
 
 ## Design
 
@@ -70,7 +70,7 @@ Please read the [Documentation](./spec/Index.md) to understand both the general
 ## Development
 
 There are two halfs to this code - go and rust. The first step is to ensure that there is
-a proper dll built for your platform. This should be `api/libwasmvm.X`, where X is:
+a proper dll built for your platform. This should be `api/libmovevm.X`, where X is:
 
 - `so` for Linux systems
 - `dylib` for MacOS
