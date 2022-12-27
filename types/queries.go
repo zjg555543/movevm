@@ -83,10 +83,8 @@ func ToQuerierResult(response []byte, err error) QuerierResult {
 type QueryRequest struct {
 	Bank     *BankQuery      `json:"bank,omitempty"`
 	Custom   json.RawMessage `json:"custom,omitempty"`
-	IBC      *IBCQuery       `json:"ibc,omitempty"`
 	Staking  *StakingQuery   `json:"staking,omitempty"`
 	Stargate *StargateQuery  `json:"stargate,omitempty"`
-	Wasm     *WasmQuery      `json:"wasm,omitempty"`
 }
 
 type BankQuery struct {
@@ -111,96 +109,6 @@ type AllBalancesQuery struct {
 // AllBalancesResponse is the expected response to AllBalancesQuery
 type AllBalancesResponse struct {
 	Amount Coins `json:"amount"`
-}
-
-// IBCQuery defines a query request from the contract into the chain.
-// This is the counterpart of [IbcQuery](https://github.com/CosmWasm/cosmwasm/blob/v0.14.0-beta1/packages/std/src/ibc.rs#L61-L83).
-type IBCQuery struct {
-	PortID       *PortIDQuery       `json:"port_id,omitempty"`
-	ListChannels *ListChannelsQuery `json:"list_channels,omitempty"`
-	Channel      *ChannelQuery      `json:"channel,omitempty"`
-}
-
-type PortIDQuery struct{}
-
-type PortIDResponse struct {
-	PortID string `json:"port_id"`
-}
-
-// ListChannelsQuery is an IBCQuery that lists all channels that are bound to a given port.
-// If `PortID` is unset, this list all channels bound to the contract's port.
-// Returns a `ListChannelsResponse`.
-// This is the counterpart of [IbcQuery::ListChannels](https://github.com/CosmWasm/cosmwasm/blob/v0.14.0-beta1/packages/std/src/ibc.rs#L70-L73).
-type ListChannelsQuery struct {
-	// optional argument
-	PortID string `json:"port_id,omitempty"`
-}
-
-type ListChannelsResponse struct {
-	Channels IBCChannels `json:"channels"`
-}
-
-// IBCChannels must JSON encode empty array as [] (not null) for consistency with Rust parser
-type IBCChannels []IBCChannel
-
-// MarshalJSON ensures that we get [] for empty arrays
-func (e IBCChannels) MarshalJSON() ([]byte, error) {
-	if len(e) == 0 {
-		return []byte("[]"), nil
-	}
-	var raw []IBCChannel = e
-	return json.Marshal(raw)
-}
-
-// UnmarshalJSON ensures that we get [] for empty arrays
-func (e *IBCChannels) UnmarshalJSON(data []byte) error {
-	// make sure we deserialize [] back to null
-	if string(data) == "[]" || string(data) == "null" {
-		return nil
-	}
-	var raw []IBCChannel
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	*e = raw
-	return nil
-}
-
-// IBCEndpoints must JSON encode empty array as [] (not null) for consistency with Rust parser
-type IBCEndpoints []IBCEndpoint
-
-// MarshalJSON ensures that we get [] for empty arrays
-func (e IBCEndpoints) MarshalJSON() ([]byte, error) {
-	if len(e) == 0 {
-		return []byte("[]"), nil
-	}
-	var raw []IBCEndpoint = e
-	return json.Marshal(raw)
-}
-
-// UnmarshalJSON ensures that we get [] for empty arrays
-func (e *IBCEndpoints) UnmarshalJSON(data []byte) error {
-	// make sure we deserialize [] back to null
-	if string(data) == "[]" || string(data) == "null" {
-		return nil
-	}
-	var raw []IBCEndpoint
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	*e = raw
-	return nil
-}
-
-type ChannelQuery struct {
-	// optional argument
-	PortID    string `json:"port_id,omitempty"`
-	ChannelID string `json:"channel_id"`
-}
-
-type ChannelResponse struct {
-	// may be empty if there is no matching channel
-	Channel *IBCChannel `json:"channel,omitempty"`
 }
 
 type StakingQuery struct {
@@ -336,39 +244,4 @@ type StargateQuery struct {
 	Path string `json:"path"`
 	// this is the expected protobuf message type (not any), binary encoded
 	Data []byte `json:"data"`
-}
-
-type WasmQuery struct {
-	Smart        *SmartQuery        `json:"smart,omitempty"`
-	Raw          *RawQuery          `json:"raw,omitempty"`
-	ContractInfo *ContractInfoQuery `json:"contract_info,omitempty"`
-}
-
-// SmartQuery respone is raw bytes ([]byte)
-type SmartQuery struct {
-	// Bech32 encoded sdk.AccAddress of the contract
-	ContractAddr string `json:"contract_addr"`
-	Msg          []byte `json:"msg"`
-}
-
-// RawQuery response is raw bytes ([]byte)
-type RawQuery struct {
-	// Bech32 encoded sdk.AccAddress of the contract
-	ContractAddr string `json:"contract_addr"`
-	Key          []byte `json:"key"`
-}
-
-type ContractInfoQuery struct {
-	// Bech32 encoded sdk.AccAddress of the contract
-	ContractAddr string `json:"contract_addr"`
-}
-
-type ContractInfoResponse struct {
-	CodeID  uint64 `json:"code_id"`
-	Creator string `json:"creator"`
-	// Set to the admin who can migrate contract, if any
-	Admin  string `json:"admin,omitempty"`
-	Pinned bool   `json:"pinned"`
-	// Set if the contract is IBC enabled
-	IBCPort string `json:"ibc_port,omitempty"`
 }

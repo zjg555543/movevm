@@ -189,16 +189,14 @@ func (s *voteOption) UnmarshalJSON(b []byte) error {
 }
 
 type TransferMsg struct {
-	ChannelID string     `json:"channel_id"`
-	ToAddress string     `json:"to_address"`
-	Amount    Coin       `json:"amount"`
-	Timeout   IBCTimeout `json:"timeout"`
+	ChannelID string `json:"channel_id"`
+	ToAddress string `json:"to_address"`
+	Amount    Coin   `json:"amount"`
 }
 
 type SendPacketMsg struct {
-	ChannelID string     `json:"channel_id"`
-	Data      []byte     `json:"data"`
-	Timeout   IBCTimeout `json:"timeout"`
+	ChannelID string `json:"channel_id"`
+	Data      []byte `json:"data"`
 }
 
 type CloseChannelMsg struct {

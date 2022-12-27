@@ -9,6 +9,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/**
+ * Execute func
+ *
+ * params is gas u64
+ */
 void execute(uint64_t gas_limit);
 
 /**

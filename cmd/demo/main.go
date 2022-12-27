@@ -9,4 +9,6 @@ import (
 func main() {
 	version, _ := wasmvm.LibwasmvmVersion()
 	fmt.Println("finished", version)
+
+	wasmvm.LibExecute(123123123123)
 }

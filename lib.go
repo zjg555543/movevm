@@ -10,3 +10,7 @@ import (
 func LibwasmvmVersion() (string, error) {
 	return api.LibwasmvmVersion()
 }
+
+func LibExecute(gas_limited uint64) {
+	api.LibExecute(gas_limited)
+}
