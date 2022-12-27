@@ -9,12 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-/**
- * Execute func
- *
- * params is gas u64
- */
-void execute(uint64_t gas_limit);
+void publish(uint64_t gas_limit);
 
 /**
  * Returns a version number of this library as a C string.

@@ -18,7 +18,7 @@ type (
 	ci64   = C.int64_t
 )
 
-func LibwasmvmVersion() (string, error) {
+func ApiMoveVersion() (string, error) {
 	version_ptr, err := C.version_str()
 	if err != nil {
 		return "", err
@@ -29,6 +29,6 @@ func LibwasmvmVersion() (string, error) {
 	return version_copy, nil
 }
 
-func LibExecute(gas_limited uint64) {
-	C.execute(cu64(gas_limited))
+func ApiPublish(gas_limited uint64) {
+	C.publish(cu64(gas_limited))
 }

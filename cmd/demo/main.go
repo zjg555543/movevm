@@ -10,5 +10,6 @@ func main() {
 	version, _ := wasmvm.LibwasmvmVersion()
 	fmt.Println("finished", version)
 
-	wasmvm.LibExecute(123123123123)
+	wasmvm.LibPublish(123123123123)
+
 }

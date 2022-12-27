@@ -31,7 +31,7 @@ test-filenames:
 
 all: build
 
-build: build-rust build-go
+build: build-rust-debug build-go
 
 build-rust: build-rust-release
 

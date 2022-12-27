@@ -1,6 +1,6 @@
 [package]
 name = "movevm"
-version = "0.0.1"
+version = "1.0.0"
 publish = false
 authors = ["github <github@users.noreply.github.com>"]
 edition = "2018"
