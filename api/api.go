@@ -30,5 +30,5 @@ func ApiMoveVersion() (string, error) {
 }
 
 func ApiPublish(gas_limited uint64) {
-	C.publish(cu64(gas_limited))
+	C.say_publish(cu64(gas_limited))
 }
