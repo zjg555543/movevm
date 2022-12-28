@@ -15,3 +15,7 @@ func LibPublish(gas_limited uint64) {
 func LibRun(gas_limited uint64) {
 	api.ApiRun(gas_limited)
 }
+
+func LibInputOutput(input []byte) {
+	api.ApiInputOutput(input)
+}

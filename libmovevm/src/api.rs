@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use move_package::BuildConfig;
 use std::{fs, path::Path};
+use crate::adapt::memory::{ByteSliceView, UnmanagedVector};
 
 use anyhow::Result;
 use move_core_types::{
@@ -122,3 +123,40 @@ pub fn test_run()-> Result<()> {
     );
     return Ok(());
 }
+
+
+#[no_mangle]
+pub extern "C" fn say_input_output(code: ByteSliceView) {
+    println!("--------------say input output-------------- ");
+
+    test_input_output(code);
+
+    // let r = match to_cache(cache) {
+    //     Some(c) => catch_unwind(AssertUnwindSafe(move || do_save_wasm(c, wasm)))
+    //         .unwrap_or_else(|_| Err(Error::panic())),
+    //     None => Err(Error::unset_arg(CACHE_ARG)),
+    // };
+    // let checksum = handle_c_error_binary(r, error_msg);
+    // UnmanagedVector::new(Some(checksum))
+}
+
+pub fn test_input_output(code: ByteSliceView)-> Result<()> {
+    let arg1 = code.read();
+    println!("code:{:?}", arg1);
+
+    return Ok(());
+}
+
+// pub extern "C" fn save_wasm(
+//     cache: *mut cache_t,
+//     wasm: ByteSliceView,
+//     error_msg: Option<&mut UnmanagedVector>,
+// ) -> UnmanagedVector {
+//     let r = match to_cache(cache) {
+//         Some(c) => catch_unwind(AssertUnwindSafe(move || do_save_wasm(c, wasm)))
+//             .unwrap_or_else(|_| Err(Error::panic())),
+//         None => Err(Error::unset_arg(CACHE_ARG)),
+//     };
+//     let checksum = handle_c_error_binary(r, error_msg);
+//     UnmanagedVector::new(Some(checksum))
+// }

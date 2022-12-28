@@ -4,6 +4,7 @@ package api
 #include "bindings.h"
 */
 import "C"
+import "runtime"
 
 // Value types
 type (
@@ -17,6 +18,9 @@ type (
 	ci32   = C.int32_t
 	ci64   = C.int64_t
 )
+
+// Pointers
+type cu8_ptr = *C.uint8_t
 
 func ApiMoveVersion() (string, error) {
 	version_ptr, err := C.version_str()
@@ -35,4 +39,16 @@ func ApiPublish(gas_limited uint64) {
 
 func ApiRun(gas_limited uint64) {
 	C.say_run(cu64(gas_limited))
+}
+
+func ApiInputOutput(input []byte) {
+	//C.say_input_output(cu64(gas_limited))
+
+	w := makeView(input)
+	defer runtime.KeepAlive(input)
+	//errmsg := newUnmanagedVector(nil)
+	C.say_input_output(w)
+
+	//return copyAndDestroyUnmanagedVector(checksum), nil
+
 }
