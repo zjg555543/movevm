@@ -48,7 +48,7 @@ pub fn test_publish()-> Result<()> {
         .into_iter()
         .chain(nursery_natives(addr, NurseryGasParameters::zeros()))
         .collect();
-    
+
     let opt_test = None;
 
     let no_republish = false;
@@ -69,4 +69,11 @@ pub fn test_publish()-> Result<()> {
     );
 
     return Ok(());
+}
+
+
+#[no_mangle]
+pub extern "C" fn say_run(gas_limit: u64) {
+    println!("run, {}", gas_limit);
+    //test_publish();
 }

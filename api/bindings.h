@@ -11,6 +11,8 @@
 
 void say_publish(uint64_t gas_limit);
 
+void say_run(uint64_t gas_limit);
+
 /**
  * Returns a version number of this library as a C string.
  *

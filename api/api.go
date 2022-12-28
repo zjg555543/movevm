@@ -32,3 +32,7 @@ func ApiMoveVersion() (string, error) {
 func ApiPublish(gas_limited uint64) {
 	C.say_publish(cu64(gas_limited))
 }
+
+func ApiRun(gas_limited uint64) {
+	C.say_run(cu64(gas_limited))
+}

@@ -11,3 +11,7 @@ func LibwasmvmVersion() (string, error) {
 func LibPublish(gas_limited uint64) {
 	api.ApiPublish(gas_limited)
 }
+
+func LibRun(gas_limited uint64) {
+	api.ApiRun(gas_limited)
+}

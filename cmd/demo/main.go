@@ -12,4 +12,6 @@ func main() {
 
 	wasmvm.LibPublish(123123123123)
 
+	wasmvm.LibRun(1231)
+
 }
