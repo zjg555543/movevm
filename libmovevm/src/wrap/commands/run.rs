@@ -77,7 +77,7 @@ move run` must be applied to a module inside `storage/`",
         .collect::<Result<Vec<AccountAddress>, _>>()?;
     // TODO: parse Value's directly instead of going through the indirection of TransactionArgument?
     let vm_args: Vec<Vec<u8>> = convert_txn_args(txn_args);
-    println!("run---debug------5");
+    println!("run---debug------5, {:?},{:?}{:?}", signer_addresses, signers, gas_budget);
     let vm = MoveVM::new(natives).unwrap();
     let mut gas_status = get_gas_status(cost_table, gas_budget)?;
     let mut session = vm.new_session(state);
