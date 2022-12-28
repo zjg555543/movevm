@@ -26,16 +26,16 @@ pub fn test_publish()-> Result<()> {
     let storage_dir = PathBuf::from(r"/Users/oker/workspace/move/move-demo/readme/storage/");
     let build_config = BuildConfig::default();
 
-    let context :PackageContext;
-    let result_context = PackageContext::new(&path, &build_config);
-    let f = match result_context {
-        Ok(result) => {
-            context = result
-        },
-        Err(error) => {
-            panic!("Problem opening the file: {:?}", error)
-        },
-    };
+    // let context :PackageContext;
+    let context = PackageContext::new(&path, &build_config)?;
+    // let f = match result_context {
+    //     Ok(result) => {
+    //         context = result
+    //     },
+    //     Err(error) => {
+    //         panic!("Problem opening the file: {:?}", error)
+    //     },
+    // };
 
     let state = context.prepare_state(&storage_dir)?;
 
@@ -48,17 +48,8 @@ pub fn test_publish()-> Result<()> {
         .into_iter()
         .chain(nursery_natives(addr, NurseryGasParameters::zeros()))
         .collect();
-
-    // Option<Vec<String>>;
-    // let mut my_vec = Vec::new();
-    // let name1 = String::from("Windy");
-    // my_vec.push(name1);
-    // let test = Some(my_vec);
-
-    // Option<&[String]>;
-
-    let test = [String::from("123"), String::from("234")];
-    let opt_test = Some(&test[0..1]);
+    
+    let opt_test = None;
 
     let no_republish = false;
     let ignore_breaking_changes = false;

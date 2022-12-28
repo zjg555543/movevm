@@ -39,6 +39,7 @@ pub fn publish(
         println!("Found {} modules", compiled_modules.len());
     }
 
+    println!("publish---debug------1");
     // order the modules for publishing
     let modules_to_publish = match override_ordering {
         Some(ordering) => {
@@ -46,9 +47,10 @@ pub fn publish(
                 .into_iter()
                 .map(|unit| (unit.unit.name().to_string(), unit))
                 .collect();
-
+            println!("publish---debug------2");
             let mut ordered_modules = vec![];
             for name in ordering {
+                println!("publish---debug------3");
                 match module_map.get(name) {
                     None => bail!("Invalid module name in publish ordering: {}", name),
                     Some(unit) => {
@@ -56,12 +58,17 @@ pub fn publish(
                     }
                 }
             }
+            println!("publish---debug------4");
             ordered_modules
         }
-        None => compiled_modules,
+        None => {
+            println!("publish---debug------5");
+            compiled_modules
+        },
     };
 
     if no_republish {
+        println!("publish---debug------6");
         let republished = modules_to_publish
             .iter()
             .filter_map(|unit| {
@@ -73,10 +80,10 @@ pub fn publish(
                 }
             })
             .collect::<Vec<_>>();
-
+        println!("publish---debug------7");
         if !republished.is_empty() {
             eprintln!("Failed to republish modules since the --no-republish flag is set. Tried to republish the following modules: {}",
-                republished.join(", "));
+                      republished.join(", "));
             return Ok(());
         }
     }
@@ -85,12 +92,14 @@ pub fn publish(
 
     // use the the publish_module API from the VM if we do not allow breaking changes
     if !ignore_breaking_changes {
+        println!("publish---debug------8");
         let vm = MoveVM::new(natives).unwrap();
         let mut gas_status = get_gas_status(cost_table, None)?;
         let mut session = vm.new_session(state);
         let mut has_error = false;
 
         if bundle {
+            println!("publish---debug------9");
             // publish all modules together as a bundle
             let mut sender_opt = None;
             let mut module_bytes_vec = vec![];
@@ -133,6 +142,7 @@ pub fn publish(
                 }
             }
         } else {
+            println!("publish---debug------10");
             // publish modules sequentially, one module at a time
             for unit in &modules_to_publish {
                 let module_bytes = unit.unit.serialize(bytecode_version);
@@ -149,6 +159,7 @@ pub fn publish(
         }
 
         if !has_error {
+            println!("publish---debug------11");
             let (changeset, events) = session.finish().map_err(|e| e.into_vm_status())?;
             assert!(events.is_empty());
             if verbose {
@@ -163,6 +174,7 @@ pub fn publish(
             state.save_modules(&modules)?;
         }
     } else {
+        println!("publish---debug------12");
         // NOTE: the VM enforces the most strict way of module republishing and does not allow
         // backward incompatible changes, as as result, if this flag is set, we skip the VM process
         // and force the CLI to override the on-disk state directly
@@ -177,3 +189,4 @@ pub fn publish(
 
     Ok(())
 }
+
