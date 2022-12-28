@@ -40,12 +40,15 @@ pub fn run(
     dry_run: bool,
     verbose: bool,
 ) -> Result<()> {
+    println!("run---debug------1");
     if !script_path.exists() {
+        println!("run---debug------2");
         bail!("Script file {:?} does not exist", script_path)
     };
     let bytecode_version = get_bytecode_version_from_env();
 
     let bytecode = if is_bytecode_file(script_path) {
+        println!("run---debug------3");
         assert!(
             state.is_module_path(script_path) || !contains_module(script_path),
             "Attempting to run module {:?} outside of the `storage/` directory.
@@ -55,6 +58,7 @@ move run` must be applied to a module inside `storage/`",
         // script bytecode; read directly from file
         fs::read(script_path)?
     } else {
+        println!("run---debug------4");
         // TODO(tzakian): support calling scripts in transitive deps
         let file_contents = std::fs::read_to_string(script_path)?;
         let script_opt = package
@@ -73,7 +77,7 @@ move run` must be applied to a module inside `storage/`",
         .collect::<Result<Vec<AccountAddress>, _>>()?;
     // TODO: parse Value's directly instead of going through the indirection of TransactionArgument?
     let vm_args: Vec<Vec<u8>> = convert_txn_args(txn_args);
-
+    println!("run---debug------5");
     let vm = MoveVM::new(natives).unwrap();
     let mut gas_status = get_gas_status(cost_table, gas_budget)?;
     let mut session = vm.new_session(state);
@@ -90,8 +94,10 @@ move run` must be applied to a module inside `storage/`",
         })
         .chain(vm_args)
         .collect();
+    println!("run---debug------6");
     let res = match script_name_opt {
         Some(script_name) => {
+            println!("run---debug------7");
             // script fun. parse module, extract script ID to pass to VM
             let module = CompiledModule::deserialize(&bytecode)
                 .map_err(|e| anyhow!("Error deserializing module: {:?}", e))?;
@@ -103,15 +109,19 @@ move run` must be applied to a module inside `storage/`",
                 &mut gas_status,
             )
         }
-        None => session.execute_script(
-            bytecode.to_vec(),
-            vm_type_args.clone(),
-            vm_args,
-            &mut gas_status,
-        ),
+        None => {
+            println!("run---debug------8");
+            session.execute_script(
+                bytecode.to_vec(),
+                vm_type_args.clone(),
+                vm_args,
+                &mut gas_status,
+            )
+        }
     };
 
     if let Err(err) = res {
+        println!("run---debug------9");
         explain_execution_error(
             error_descriptions,
             err,
@@ -123,6 +133,7 @@ move run` must be applied to a module inside `storage/`",
             txn_args,
         )
     } else {
+        println!("run---debug------10");
         let (changeset, events) = session.finish().map_err(|e| e.into_vm_status())?;
         if verbose {
             explain_execution_effects(&changeset, &events, state)?
@@ -130,3 +141,4 @@ move run` must be applied to a module inside `storage/`",
         maybe_commit_effects(!dry_run, changeset, events, state)
     }
 }
+
