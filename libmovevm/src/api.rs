@@ -2,6 +2,8 @@ use std::path::PathBuf;
 use move_package::BuildConfig;
 use std::{fs, path::Path};
 use crate::adapt::memory::{ByteSliceView, UnmanagedVector};
+use crate::adapt::error::{handle_c_error_binary, handle_c_error_default, handle_c_error_ptr, Error};
+use crate::adapt::args::{AVAILABLE_CAPABILITIES_ARG, CACHE_ARG, CHECKSUM_ARG, DATA_DIR_ARG, WASM_ARG};
 
 use anyhow::Result;
 use move_core_types::{
@@ -126,20 +128,16 @@ pub fn test_run()-> Result<()> {
 
 
 #[no_mangle]
-pub extern "C" fn say_input_output(code: ByteSliceView) -> UnmanagedVector{
+pub extern "C" fn say_input_output(code: ByteSliceView, error_msg: Option<&mut UnmanagedVector>) -> UnmanagedVector{
     println!("--------------say input output-------------- ");
 
-    test_input_output(code);
+    let arg1 = code.read();
+    println!("code:{:?}", arg1);
 
-    // let r = match to_cache(cache) {
-    //     Some(c) => catch_unwind(AssertUnwindSafe(move || do_save_wasm(c, wasm)))
-    //         .unwrap_or_else(|_| Err(Error::panic())),
-    //     None => Err(Error::unset_arg(CACHE_ARG)),
-    // };
-    // let checksum = handle_c_error_binary(r, error_msg);
+    // test_input_output(code);
+    let res: Result<Vec<u8>, Error> = Err(Error::unset_arg(CACHE_ARG));
+    handle_c_error_binary(res, error_msg);
 
-    // let mut result Vec<u8>;
-    // result.push(0);
     let mut vec = Vec::new();
     vec.push(1);
     vec.push(2);
@@ -150,22 +148,7 @@ pub extern "C" fn say_input_output(code: ByteSliceView) -> UnmanagedVector{
 }
 
 pub fn test_input_output(code: ByteSliceView)-> Result<()> {
-    let arg1 = code.read();
-    println!("code:{:?}", arg1);
+
 
     return Ok(());
 }
-
-// pub extern "C" fn save_wasm(
-//     cache: *mut cache_t,
-//     wasm: ByteSliceView,
-//     error_msg: Option<&mut UnmanagedVector>,
-// ) -> UnmanagedVector {
-//     let r = match to_cache(cache) {
-//         Some(c) => catch_unwind(AssertUnwindSafe(move || do_save_wasm(c, wasm)))
-//             .unwrap_or_else(|_| Err(Error::panic())),
-//         None => Err(Error::unset_arg(CACHE_ARG)),
-//     };
-//     let checksum = handle_c_error_binary(r, error_msg);
-//     UnmanagedVector::new(Some(checksum))
-// }

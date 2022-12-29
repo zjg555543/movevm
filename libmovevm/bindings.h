@@ -9,6 +9,50 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+enum ErrnoValue {
+  ErrnoValue_Success = 0,
+  ErrnoValue_Other = 1,
+  ErrnoValue_OutOfGas = 2,
+};
+typedef int32_t ErrnoValue;
+
+/**
+ * This enum gives names to the status codes returned from Go callbacks to Rust.
+ * The Go code will return one of these variants when returning.
+ *
+ * 0 means no error, all the other cases are some sort of error.
+ *
+ */
+enum GoError {
+  GoError_None = 0,
+  /**
+   * Go panicked for an unexpected reason.
+   */
+  GoError_Panic = 1,
+  /**
+   * Go received a bad argument from Rust
+   */
+  GoError_BadArgument = 2,
+  /**
+   * Ran out of gas while using the SDK (e.g. storage). This can come from the Cosmos SDK gas meter
+   * (https://github.com/cosmos/cosmos-sdk/blob/v0.45.4/store/types/gas.go#L29-L32).
+   */
+  GoError_OutOfGas = 3,
+  /**
+   * Error while trying to serialize data in Go code (typically json.Marshal)
+   */
+  GoError_CannotSerialize = 4,
+  /**
+   * An error happened during normal operation of a Go callback, which should be fed back to the contract
+   */
+  GoError_User = 5,
+  /**
+   * An error type that should never be created by us. It only serves as a fallback for the i32 to GoError conversion.
+   */
+  GoError_Other = -1,
+};
+typedef int32_t GoError;
+
 /**
  * An optional Vector type that requires explicit creation and destruction
  * and can be sent via FFI.
@@ -149,7 +193,8 @@ void say_publish(uint64_t gas_limit);
 
 void say_run(uint64_t gas_limit);
 
-struct UnmanagedVector say_input_output(struct ByteSliceView code);
+struct UnmanagedVector say_input_output(struct ByteSliceView code,
+                                        struct UnmanagedVector *error_msg);
 
 /**
  * Returns a version number of this library as a C string.

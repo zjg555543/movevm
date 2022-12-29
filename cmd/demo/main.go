@@ -14,7 +14,11 @@ func main() {
 
 	wasmvm.LibRun(1231)
 
-	result, _ := wasmvm.LibInputOutput([]byte("12345678"))
-	fmt.Println(result)
+	result, err := wasmvm.LibInputOutput([]byte("12345678"))
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(result)
+	}
 
 }

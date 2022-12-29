@@ -4,7 +4,12 @@ package api
 #include "bindings.h"
 */
 import "C"
-import "runtime"
+import (
+	"fmt"
+	"github.com/zjg555543/movevm/types"
+	"runtime"
+	"syscall"
+)
 
 // Value types
 type (
@@ -46,9 +51,25 @@ func ApiInputOutput(input []byte) ([]byte, error) {
 
 	w := makeView(input)
 	defer runtime.KeepAlive(input)
-	//errmsg := newUnmanagedVector(nil)
-	result := C.say_input_output(w)
+	errmsg := newUnmanagedVector(nil)
+
+	result, err := C.say_input_output(w, &errmsg)
+	if err != nil {
+		return nil, errorWithMessage(err, errmsg)
+	}
 
 	return copyAndDestroyUnmanagedVector(result), nil
 
+}
+
+func errorWithMessage(err error, b C.UnmanagedVector) error {
+	// this checks for out of gas as a special case
+	if errno, ok := err.(syscall.Errno); ok && int(errno) == 2 {
+		return types.OutOfGasError{}
+	}
+	msg := copyAndDestroyUnmanagedVector(b)
+	if msg == nil {
+		return err
+	}
+	return fmt.Errorf("%s", string(msg))
 }
