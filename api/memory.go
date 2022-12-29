@@ -71,15 +71,15 @@ func copyAndDestroyUnmanagedVector(v C.UnmanagedVector) []byte {
 
 // copyU8Slice copies the contents of an Option<&[u8]> that was allocated on the Rust side.
 // Returns nil if and only if the source is None.
-//func copyU8Slice(view C.U8SliceView) []byte {
-//	if view.is_none {
-//		return nil
-//	}
-//	if view.len == 0 {
-//		// In this case, we don't want to look into the ptr
-//		return []byte{}
-//	}
-//	// C.GoBytes create a copy (https://stackoverflow.com/a/40950744/2013738)
-//	res := C.GoBytes(unsafe.Pointer(view.ptr), cint(view.len))
-//	return res
-//}
+func copyU8Slice(view C.U8SliceView) []byte {
+	if view.is_none {
+		return nil
+	}
+	if view.len == 0 {
+		// In this case, we don't want to look into the ptr
+		return []byte{}
+	}
+	// C.GoBytes create a copy (https://stackoverflow.com/a/40950744/2013738)
+	res := C.GoBytes(unsafe.Pointer(view.ptr), cint(view.len))
+	return res
+}

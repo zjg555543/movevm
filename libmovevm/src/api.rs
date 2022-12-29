@@ -2,8 +2,11 @@ use std::path::PathBuf;
 use move_package::BuildConfig;
 use std::{fs, path::Path};
 use crate::adapt::memory::{ByteSliceView, UnmanagedVector};
+use crate::adapt::db::Db;
+use crate::adapt::goapi::GoApi;
 use crate::adapt::error::{handle_c_error_binary, handle_c_error_default, handle_c_error_ptr, Error};
 use crate::adapt::args::{AVAILABLE_CAPABILITIES_ARG, CACHE_ARG, CHECKSUM_ARG, DATA_DIR_ARG, WASM_ARG};
+use crate::adapt::querier::GoQuerier;
 
 use anyhow::Result;
 use move_core_types::{
@@ -128,7 +131,11 @@ pub fn test_run()-> Result<()> {
 
 
 #[no_mangle]
-pub extern "C" fn say_input_output(code: ByteSliceView, error_msg: Option<&mut UnmanagedVector>) -> UnmanagedVector{
+pub extern "C" fn say_input_output(code: ByteSliceView,
+                                   db: Db,
+                                   api: GoApi,
+                                   querier: GoQuerier,
+                                   error_msg: Option<&mut UnmanagedVector>) -> UnmanagedVector{
     println!("--------------say input output-------------- ");
 
     let arg1 = code.read();

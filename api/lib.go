@@ -27,6 +27,8 @@ type (
 // Pointers
 type cu8_ptr = *C.uint8_t
 
+type Querier = types.Querier
+
 func ApiMoveVersion() (string, error) {
 	version_ptr, err := C.version_str()
 	if err != nil {
@@ -53,7 +55,11 @@ func ApiInputOutput(input []byte) ([]byte, error) {
 	defer runtime.KeepAlive(input)
 	errmsg := newUnmanagedVector(nil)
 
-	result, err := C.say_input_output(w, &errmsg)
+	db := buildDB(nil, nil)
+	a := buildAPI(nil)
+	q := buildQuerier(nil)
+
+	result, err := C.say_input_output(w, db, a, q, &errmsg)
 	if err != nil {
 		return nil, errorWithMessage(err, errmsg)
 	}

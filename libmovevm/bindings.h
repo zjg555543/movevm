@@ -189,11 +189,97 @@ typedef struct ByteSliceView {
   uintptr_t len;
 } ByteSliceView;
 
+/**
+ * An opaque type. `*gas_meter_t` represents a pointer to Go memory holding the gas meter.
+ */
+typedef struct gas_meter_t {
+  uint8_t _private[0];
+} gas_meter_t;
+
+typedef struct db_t {
+  uint8_t _private[0];
+} db_t;
+
+/**
+ * A view into a `Option<&[u8]>`, created and maintained by Rust.
+ *
+ * This can be copied into a []byte in Go.
+ */
+typedef struct U8SliceView {
+  /**
+   * True if and only if this is None. If this is true, the other fields must be ignored.
+   */
+  bool is_none;
+  const uint8_t *ptr;
+  uintptr_t len;
+} U8SliceView;
+
+typedef struct iterator_t {
+  /**
+   * An ID assigned to this contract call
+   */
+  uint64_t call_id;
+  uint64_t iterator_index;
+} iterator_t;
+
+typedef struct Iterator_vtable {
+  int32_t (*next_db)(struct iterator_t, struct gas_meter_t*, uint64_t*, struct UnmanagedVector*, struct UnmanagedVector*, struct UnmanagedVector*);
+} Iterator_vtable;
+
+typedef struct GoIter {
+  struct gas_meter_t *gas_meter;
+  struct iterator_t state;
+  struct Iterator_vtable vtable;
+} GoIter;
+
+typedef struct Db_vtable {
+  int32_t (*read_db)(struct db_t*, struct gas_meter_t*, uint64_t*, struct U8SliceView, struct UnmanagedVector*, struct UnmanagedVector*);
+  int32_t (*write_db)(struct db_t*, struct gas_meter_t*, uint64_t*, struct U8SliceView, struct U8SliceView, struct UnmanagedVector*);
+  int32_t (*remove_db)(struct db_t*, struct gas_meter_t*, uint64_t*, struct U8SliceView, struct UnmanagedVector*);
+  int32_t (*scan_db)(struct db_t*, struct gas_meter_t*, uint64_t*, struct U8SliceView, struct U8SliceView, int32_t, struct GoIter*, struct UnmanagedVector*);
+} Db_vtable;
+
+typedef struct Db {
+  struct gas_meter_t *gas_meter;
+  struct db_t *state;
+  struct Db_vtable vtable;
+} Db;
+
+typedef struct api_t {
+  uint8_t _private[0];
+} api_t;
+
+typedef struct GoApi_vtable {
+  int32_t (*humanize_address)(const struct api_t*, struct U8SliceView, struct UnmanagedVector*, struct UnmanagedVector*, uint64_t*);
+  int32_t (*canonicalize_address)(const struct api_t*, struct U8SliceView, struct UnmanagedVector*, struct UnmanagedVector*, uint64_t*);
+} GoApi_vtable;
+
+typedef struct GoApi {
+  const struct api_t *state;
+  struct GoApi_vtable vtable;
+} GoApi;
+
+typedef struct querier_t {
+  uint8_t _private[0];
+} querier_t;
+
+typedef struct Querier_vtable {
+  int32_t (*query_external)(const struct querier_t*, uint64_t, uint64_t*, struct U8SliceView, struct UnmanagedVector*, struct UnmanagedVector*);
+} Querier_vtable;
+
+typedef struct GoQuerier {
+  const struct querier_t *state;
+  struct Querier_vtable vtable;
+} GoQuerier;
+
 void say_publish(uint64_t gas_limit);
 
 void say_run(uint64_t gas_limit);
 
 struct UnmanagedVector say_input_output(struct ByteSliceView code,
+                                        struct Db db,
+                                        struct GoApi api,
+                                        struct GoQuerier querier,
                                         struct UnmanagedVector *error_msg);
 
 /**
