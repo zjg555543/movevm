@@ -41,14 +41,14 @@ func ApiRun(gas_limited uint64) {
 	C.say_run(cu64(gas_limited))
 }
 
-func ApiInputOutput(input []byte) {
+func ApiInputOutput(input []byte) ([]byte, error) {
 	//C.say_input_output(cu64(gas_limited))
 
 	w := makeView(input)
 	defer runtime.KeepAlive(input)
 	//errmsg := newUnmanagedVector(nil)
-	C.say_input_output(w)
+	result := C.say_input_output(w)
 
-	//return copyAndDestroyUnmanagedVector(checksum), nil
+	return copyAndDestroyUnmanagedVector(result), nil
 
 }

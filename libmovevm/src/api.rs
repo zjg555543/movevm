@@ -126,7 +126,7 @@ pub fn test_run()-> Result<()> {
 
 
 #[no_mangle]
-pub extern "C" fn say_input_output(code: ByteSliceView) {
+pub extern "C" fn say_input_output(code: ByteSliceView) -> UnmanagedVector{
     println!("--------------say input output-------------- ");
 
     test_input_output(code);
@@ -137,7 +137,16 @@ pub extern "C" fn say_input_output(code: ByteSliceView) {
     //     None => Err(Error::unset_arg(CACHE_ARG)),
     // };
     // let checksum = handle_c_error_binary(r, error_msg);
-    // UnmanagedVector::new(Some(checksum))
+
+    // let mut result Vec<u8>;
+    // result.push(0);
+    let mut vec = Vec::new();
+    vec.push(1);
+    vec.push(2);
+    vec.push(3);
+    vec.push(4);
+
+    UnmanagedVector::new(Some(vec))
 }
 
 pub fn test_input_output(code: ByteSliceView)-> Result<()> {

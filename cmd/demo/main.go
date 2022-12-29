@@ -14,6 +14,7 @@ func main() {
 
 	wasmvm.LibRun(1231)
 
-	wasmvm.LibInputOutput([]byte("12345678"))
+	result, _ := wasmvm.LibInputOutput([]byte("12345678"))
+	fmt.Println(result)
 
 }
