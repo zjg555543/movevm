@@ -11,3 +11,4 @@ pub mod iterator;
 pub mod vm;
 pub mod goapi;
 pub mod querier;
+pub mod storage;

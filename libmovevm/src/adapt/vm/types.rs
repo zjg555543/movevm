@@ -146,3 +146,51 @@ pub trait Querier {
     ) -> BackendResult<SystemResult<ContractResult<Binary>>>;
 }
 
+pub trait Storage {
+    /// Returns Err on error.
+    /// Returns Ok(None) when key does not exist.
+    /// Returns Ok(Some(Vec<u8>)) when key exists.
+    ///
+    /// Note: Support for differentiating between a non-existent key and a key with empty value
+    /// is not great yet and might not be possible in all backends. But we're trying to get there.
+    fn get(&self, key: &[u8]) -> BackendResult<Option<Vec<u8>>>;
+
+    /// Allows iteration over a set of key/value pairs, either forwards or backwards.
+    /// Returns an interator ID that is unique within the Storage instance.
+    ///
+    /// The bound `start` is inclusive and `end` is exclusive.
+    ///
+    /// If `start` is lexicographically greater than or equal to `end`, an empty range is described, mo matter of the order.
+    ///
+    /// This call must not change data in the storage, but creating and storing a new iterator can be a mutating operation on
+    /// the Storage implementation.
+    /// The implementation must ensure that iterator IDs are assigned in a deterministic manner as this is
+    /// environment data that is injected into the contract.
+    #[cfg(feature = "iterator")]
+
+    fn scan(
+        &mut self,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
+        order: Order,
+    ) -> BackendResult<u32>;
+
+    /// Returns the next element of the iterator with the given ID.
+    ///
+    /// If the ID is not found, a BackendError::IteratorDoesNotExist is returned.
+    ///
+    /// This call must not change data in the storage, but incrementing an iterator can be a mutating operation on
+    /// the Storage implementation.
+    #[cfg(feature = "iterator")]
+    fn next(&mut self, iterator_id: u32) -> BackendResult<Option<Record>>;
+
+    fn set(&mut self, key: &[u8], value: &[u8]) -> BackendResult<()>;
+
+    /// Removes a database entry at `key`.
+    ///
+    /// The current interface does not allow to differentiate between a key that existed
+    /// before and one that didn't exist. See https://github.com/CosmWasm/cosmwasm/issues/290
+    fn remove(&mut self, key: &[u8]) -> BackendResult<()>;
+}
+
+

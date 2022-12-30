@@ -9,6 +9,8 @@ use crate::adapt::args::{AVAILABLE_CAPABILITIES_ARG, CACHE_ARG, CHECKSUM_ARG, DA
 use crate::adapt::querier::GoQuerier;
 use crate::adapt::error::GoError;
 use crate::adapt::vm::types::GasInfo;
+use crate::adapt::vm::types::Storage;
+use crate::adapt::storage::GoStorage;
 
 use cosmwasm_std::{
     coins, from_binary, to_vec, AllBalanceResponse, BankQuery, Empty, QueryRequest,
@@ -158,6 +160,7 @@ pub extern "C" fn say_input_output(code: ByteSliceView,
     // let res: Result<Vec<u8>, Error> = Err(Error::unset_arg(CACHE_ARG));
     // handle_c_error_binary(res, error_msg);
 
+    // for query test
     let mut output = UnmanagedVector::default();
     let mut error_msg = UnmanagedVector::default();
     let mut used_gas = 0_u64;
@@ -196,6 +199,8 @@ pub extern "C" fn say_input_output(code: ByteSliceView,
     println!("result{:?}", amount);
 
 
+    // for store.get(&key) and set
+    test_db(db);
 
     let mut vec = Vec::new();
     vec.push(1);
@@ -204,10 +209,25 @@ pub extern "C" fn say_input_output(code: ByteSliceView,
     vec.push(4);
 
     UnmanagedVector::new(Some(vec))
+
 }
 
-pub fn test_input_output(code: ByteSliceView)-> Result<()> {
+pub fn test_db(db: Db){
+    let mut store = GoStorage::new(db);
+    let mut key = Vec::new();
+    key.push(1);
+    key.push(1);
+    key.push(1);
+    key.push(1);
+
+    let mut value = Vec::new();
+    value.push(2);
+    value.push(2);
+    value.push(2);
+    value.push(2);
+    store.set(&key, &value);
 
 
-    return Ok(());
+    let hello_db = store.get(&key);
+    println!("get db hello_db:{:?}", hello_db)
 }
