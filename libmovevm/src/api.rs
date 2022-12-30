@@ -1,12 +1,25 @@
 use std::path::PathBuf;
 use move_package::BuildConfig;
 use std::{fs, path::Path};
-use crate::adapt::memory::{ByteSliceView, UnmanagedVector};
+use crate::adapt::memory::{U8SliceView, ByteSliceView, UnmanagedVector};
 use crate::adapt::db::Db;
 use crate::adapt::goapi::GoApi;
 use crate::adapt::error::{handle_c_error_binary, handle_c_error_default, handle_c_error_ptr, Error};
 use crate::adapt::args::{AVAILABLE_CAPABILITIES_ARG, CACHE_ARG, CHECKSUM_ARG, DATA_DIR_ARG, WASM_ARG};
 use crate::adapt::querier::GoQuerier;
+use crate::adapt::error::GoError;
+use crate::adapt::vm::types::GasInfo;
+
+use cosmwasm_std::{
+    coins, from_binary, to_vec, AllBalanceResponse, BankQuery, Empty, QueryRequest,
+};
+use cosmwasm_std::{Binary, ContractResult, SystemError, SystemResult};
+
+
+use cosmwasm_std::{
+    coin, BalanceResponse,
+};
+
 
 use anyhow::Result;
 use move_core_types::{
@@ -141,9 +154,48 @@ pub extern "C" fn say_input_output(code: ByteSliceView,
     let arg1 = code.read();
     println!("code:{:?}", arg1);
 
-    // test_input_output(code);
-    let res: Result<Vec<u8>, Error> = Err(Error::unset_arg(CACHE_ARG));
-    handle_c_error_binary(res, error_msg);
+    // test error msg
+    // let res: Result<Vec<u8>, Error> = Err(Error::unset_arg(CACHE_ARG));
+    // handle_c_error_binary(res, error_msg);
+
+    let mut output = UnmanagedVector::default();
+    let mut error_msg = UnmanagedVector::default();
+    let mut used_gas = 0_u64;
+    const INIT_ADDR: &str = "contract";
+    let req: QueryRequest<Empty> = QueryRequest::Bank(BankQuery::AllBalances {
+        address: INIT_ADDR.to_string(),
+    });
+
+    let request = &to_vec(&req).unwrap();
+
+    const DEFAULT_QUERY_GAS_LIMIT: u64 = 300_000;
+    let gas_limit = DEFAULT_QUERY_GAS_LIMIT;
+
+    let go_result: GoError = (querier.vtable.query_external)(
+        querier.state,
+        gas_limit,
+        &mut used_gas as *mut u64,
+        U8SliceView::new(Some(request)),
+        &mut output as *mut UnmanagedVector,
+        &mut error_msg as *mut UnmanagedVector,
+    ).into();
+
+    let gas_info = GasInfo::with_externally_used(used_gas);
+    println!("gas use{:?}", used_gas);
+    let output = output.consume();
+
+    let bin_result: Vec<u8> = output.unwrap_or_default();
+    let result :Result<SystemResult<ContractResult<Binary>>> = serde_json::from_slice(&bin_result).or_else(|e| {
+        Ok(SystemResult::Err(SystemError::InvalidResponse {
+            error: format!("Parsing Go response: {}", e),
+            response: bin_result.into(),
+        }))
+    });
+    let bin_data :Binary = result.unwrap().unwrap().unwrap();
+    let AllBalanceResponse { amount } = from_binary(&bin_data).unwrap();
+    println!("result{:?}", amount);
+
+
 
     let mut vec = Vec::new();
     vec.push(1);
