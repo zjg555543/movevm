@@ -48,6 +48,7 @@ func ApiRun(gas_limited uint64) {
 	C.say_run(cu64(gas_limited))
 }
 
+const TESTING_GAS_LIMIT = uint64(500_000_000_000) // ~0.5ms
 func ApiInputOutput(input []byte) ([]byte, error) {
 	//C.say_input_output(cu64(gas_limited))
 
@@ -55,9 +56,22 @@ func ApiInputOutput(input []byte) ([]byte, error) {
 	defer runtime.KeepAlive(input)
 	errmsg := newUnmanagedVector(nil)
 
-	db := buildDB(nil, nil)
-	a := buildAPI(nil)
-	q := buildQuerier(nil)
+	gasMeter1 := NewMockGasMeter(TESTING_GAS_LIMIT)
+	gasMeter2 := NewMockGasMeter(TESTING_GAS_LIMIT)
+	store := NewLookup(gasMeter1)
+	igasMeter2 := GasMeter(gasMeter2)
+	store.SetGasMeter(gasMeter2)
+	api := NewMockAPI()
+	balance := types.Coins{types.NewCoin(250, "ATOM")}
+	querier := DefaultQuerier(MOCK_CONTRACT_ADDR, balance)
+
+	callID := startCall()
+	defer endCall(callID)
+
+	dbState := buildDBState(store, callID)
+	db := buildDB(&dbState, &igasMeter2)
+	a := buildAPI(api)
+	q := buildQuerier(&querier)
 
 	result, err := C.say_input_output(w, db, a, q, &errmsg)
 	if err != nil {
