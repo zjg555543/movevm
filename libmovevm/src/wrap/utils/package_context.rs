@@ -38,6 +38,8 @@ impl PackageContext {
         let bytecode_version = get_bytecode_version_from_env();
         let state = OnDiskStateView::create(self.build_dir.as_path(), storage_dir)?;
 
+        println!("prepare_state------1--{:?},{:?}", self.build_dir, storage_dir);
+
         // preload the storage with library modules (if such modules do not exist yet)
         let package = self.package();
         let new_modules = package
@@ -56,6 +58,7 @@ impl PackageContext {
             module.serialize_for_version(bytecode_version, &mut module_bytes)?;
             serialized_modules.push((self_id, module_bytes));
         }
+        println!("prepare_state--------save_modules");
         state.save_modules(&serialized_modules)?;
 
         Ok(state)

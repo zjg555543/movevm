@@ -97,7 +97,7 @@ pub fn publish(
         let mut gas_status = get_gas_status(cost_table, None)?;
         let mut session = vm.new_session(state);
         let mut has_error = false;
-
+        println!("publish---debug------8--gas_status:{:?}", gas_status.remaining_gas());
         if bundle {
             println!("publish---debug------9");
             // publish all modules together as a bundle
@@ -159,7 +159,7 @@ pub fn publish(
         }
 
         if !has_error {
-            println!("publish---debug------11");
+            println!("publish---debug------11--gas_status:{:?}", gas_status.remaining_gas());
             let (changeset, events) = session.finish().map_err(|e| e.into_vm_status())?;
             assert!(events.is_empty());
             if verbose {
