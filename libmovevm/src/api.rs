@@ -36,22 +36,32 @@ use crate::{
 
 
 #[no_mangle]
-pub extern "C" fn say_publish(gas_limit: u64, db: Db) {
+pub extern "C" fn say_publish(module_code: ByteSliceView, sender: ByteSliceView, db: Db) {
     println!("--------------say publish start-------------- ");
-    test_publish(db);
+
+    test_publish(module_code, sender, db);
     println!("--------------say publish end-------------- ");
 }
 
-pub fn test_publish(db: Db)-> Result<()> {
+pub fn test_publish(module_code: ByteSliceView, sender: ByteSliceView, db: Db)-> Result<()> {
+    let module_bytes_params = module_code.to_owned().unwrap();
+    println!("module_bytes_params len --- 1:{:?}", module_bytes_params.len());
+    let temp_sender = sender.to_owned().unwrap();
+    let sender_params = std::str::from_utf8(&temp_sender).unwrap();
+
+    println!("sender_params len --- 1:{:?}", sender_params);
+
     let path = Some(PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme"));
     let storage_dir = PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme/storage/");
     let build_config = BuildConfig::default();
 
-    // let context :PackageContext;
-    let context = PackageContext::new(&path, &build_config)?;
-
     println!("--------------test_publish-------------- 0 ");
-    let mut state = context.prepare_state(&storage_dir, &storage_dir, db)?;
+
+    let mut state= OnDiskStateView::create(build_config.install_dir
+                                               .as_ref()
+                                               .unwrap_or(&PathBuf::from(DEFAULT_BUILD_DIR))
+                                               .clone(), storage_dir, Box::new(GoStorage::new(db)))?;
+
     println!("--------------test_publish-------------- 1 ");
 
     let cost_table = &move_vm_test_utils::gas_schedule::INITIAL_COST_SCHEDULE;
@@ -66,10 +76,11 @@ pub fn test_publish(db: Db)-> Result<()> {
     println!("--------------test_publish-------------- 3 ");
 
     publish(
+        module_bytes_params,
+        sender_params,
         natives,
         cost_table,
         &mut state,
-        context.package(),
         true,
     );
 

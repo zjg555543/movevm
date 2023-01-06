@@ -40,12 +40,19 @@ func ApiMoveVersion() (string, error) {
 
 func ApiPublish(env []byte, info []byte, msg []byte, gasMeter *GasMeter, store KVStore,
 	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) {
+
+	w := makeView(env)
+	defer runtime.KeepAlive(env)
+
+	i := makeView(info)
+	defer runtime.KeepAlive(info)
+
 	callID := startCall()
 	defer endCall(callID)
 
 	dbState := buildDBState(store, callID)
 	db := buildDB(&dbState, gasMeter)
-	C.say_publish(cu64(gasLimit), db)
+	C.say_publish(w, i, db)
 }
 
 func ApiRun(env []byte, info []byte, msg []byte, gasMeter *GasMeter, store KVStore,
