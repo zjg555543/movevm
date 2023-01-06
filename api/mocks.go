@@ -168,7 +168,7 @@ func (l Lookup) Get(key []byte) []byte {
 	if err != nil {
 		panic(err)
 	}
-
+	//fmt.Println(fmt.Sprintf("Mokc db, get key %s", key))
 	return v
 }
 
@@ -178,6 +178,7 @@ func (l Lookup) Set(key, value []byte) {
 	if err := l.db.Set(key, value); err != nil {
 		panic(err)
 	}
+	//fmt.Println(fmt.Sprintf("Mokc db, set key %s, value len(%d)", key, len(value)))
 }
 
 // Delete wraps the underlying DB's Delete method panicing on error.

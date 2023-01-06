@@ -248,7 +248,7 @@ pub(crate) fn maybe_commit_effects(
     commit: bool,
     changeset: ChangeSet,
     events: Vec<Event>,
-    state: &OnDiskStateView,
+    state: &mut OnDiskStateView,
 ) -> Result<()> {
     // similar to explain effects, all module publishing happens via save_modules(), so effects
     // shouldn't contain modules
@@ -314,143 +314,143 @@ pub(crate) fn explain_type_error(
     println!("Execution failed with type error when binding type arguments to type parameters")
 }
 
-pub(crate) fn explain_publish_error(
-    error: VMError,
-    state: &OnDiskStateView,
-    unit: &CompiledUnitWithSource,
-) -> Result<()> {
-    use StatusCode::*;
-    let mut files = HashMap::new();
-    let file_contents = std::fs::read_to_string(&unit.source_path)?;
-    let file_hash = FileHash::new(&file_contents);
-    files.insert(
-        file_hash,
-        (
-            FileName::from(unit.source_path.to_string_lossy()),
-            file_contents,
-        ),
-    );
-
-    let module = module(&unit.unit)?;
-    let module_id = module.self_id();
-    let error_clone = error.clone();
-    match error.into_vm_status() {
-        VMStatus::Error(DUPLICATE_MODULE_NAME) => {
-            println!(
-                "Module {} exists already. Re-run without --no-republish to publish anyway.",
-                module_id
-            );
-        }
-        VMStatus::Error(BACKWARD_INCOMPATIBLE_MODULE_UPDATE) => {
-            println!("Breaking change detected--publishing aborted. Re-run with --ignore-breaking-changes to publish anyway.");
-
-            let old_module = state.get_module_by_id(&module_id)?.unwrap();
-            let old_api = normalized::Module::new(&old_module);
-            let new_api = normalized::Module::new(module);
-
-            if Compatibility::new(false, true, false)
-                .check(&old_api, &new_api)
-                .is_err()
-            {
-                // TODO: we could choose to make this more precise by walking the global state and looking for published
-                // structs of this type. but probably a bad idea
-                println!("Layout API for structs of module {} has changed. Need to do a data migration of published structs", module_id)
-            } else if Compatibility::new(true, false, false)
-                .check(&old_api, &new_api)
-                .is_err()
-            {
-                // TODO: this will report false positives if we *are* simultaneously redeploying all dependent modules.
-                // but this is not easy to check without walking the global state and looking for everything
-                println!("Linking API for structs/functions of module {} has changed. Need to redeploy all dependent modules.", module_id)
-            }
-        }
-        VMStatus::Error(CYCLIC_MODULE_DEPENDENCY) => {
-            println!(
-                "Publishing module {} introduces cyclic dependencies.",
-                module_id
-            );
-            // find all cycles with an iterative DFS
-            let all_modules = state.get_all_modules()?;
-            let code_cache = Modules::new(&all_modules);
-
-            let mut stack = vec![];
-            let mut state = BTreeMap::new();
-            state.insert(module_id.clone(), true);
-            for dep in module.immediate_dependencies() {
-                stack.push((code_cache.get_module(&dep)?, false));
-            }
-
-            while !stack.is_empty() {
-                let (cur, is_exit) = stack.pop().unwrap();
-                let cur_id = cur.self_id();
-                if is_exit {
-                    state.insert(cur_id, false);
-                } else {
-                    state.insert(cur_id, true);
-                    stack.push((cur, true));
-                    for next in cur.immediate_dependencies() {
-                        if let Some(is_discovered_but_not_finished) = state.get(&next) {
-                            if *is_discovered_but_not_finished {
-                                let cycle_path: Vec<_> = stack
-                                    .iter()
-                                    .filter(|(_, is_exit)| *is_exit)
-                                    .map(|(m, _)| m.self_id().to_string())
-                                    .collect();
-                                println!(
-                                    "Cycle detected: {} -> {} -> {}",
-                                    module_id,
-                                    cycle_path.join(" -> "),
-                                    module_id,
-                                );
-                            }
-                        } else {
-                            stack.push((code_cache.get_module(&next)?, false));
-                        }
-                    }
-                }
-            }
-            println!("Re-run with --ignore-breaking-changes to publish anyway.")
-        }
-        VMStatus::Error(MISSING_DEPENDENCY) => {
-            let err_indices = error_clone.indices();
-            let mut diags = Diagnostics::new();
-            for (ind_kind, table_ind) in err_indices {
-                if let IndexKind::FunctionHandle = ind_kind {
-                    let native_function = &(module.function_defs())[*table_ind as usize];
-                    let fh = module.function_handle_at(native_function.function);
-                    let mh = module.module_handle_at(fh.module);
-                    let function_source_map = unit
-                        .unit
-                        .source_map()
-                        .get_function_source_map(FunctionDefinitionIndex(*table_ind));
-                    if let Ok(map) = function_source_map {
-                        let err_string = format!(
-                            "Missing implementation for the native function {}::{}",
-                            module.identifier_at(mh.name).as_str(),
-                            module.identifier_at(fh.name).as_str()
-                        );
-                        let diag = Diagnostic::new(
-                            diagnostics::codes::Declarations::InvalidFunction,
-                            (map.definition_location, err_string),
-                            Vec::<(Loc, String)>::new(),
-                            Vec::<String>::new(),
-                        );
-                        diags.add(diag);
-                    }
-                }
-            }
-            report_diagnostics(&files, diags)
-        }
-        VMStatus::Error(status_code) => {
-            println!("Publishing failed with unexpected error {:?}", status_code)
-        }
-        VMStatus::Executed | VMStatus::MoveAbort(..) | VMStatus::ExecutionFailure { .. } => {
-            unreachable!()
-        }
-    }
-
-    Ok(())
-}
+// pub(crate) fn explain_publish_error(
+//     error: VMError,
+//     state: &OnDiskStateView,
+//     unit: &CompiledUnitWithSource,
+// ) -> Result<()> {
+//     use StatusCode::*;
+//     let mut files = HashMap::new();
+//     let file_contents = std::fs::read_to_string(&unit.source_path)?;
+//     let file_hash = FileHash::new(&file_contents);
+//     files.insert(
+//         file_hash,
+//         (
+//             FileName::from(unit.source_path.to_string_lossy()),
+//             file_contents,
+//         ),
+//     );
+//
+//     let module = module(&unit.unit)?;
+//     let module_id = module.self_id();
+//     let error_clone = error.clone();
+//     match error.into_vm_status() {
+//         VMStatus::Error(DUPLICATE_MODULE_NAME) => {
+//             println!(
+//                 "Module {} exists already. Re-run without --no-republish to publish anyway.",
+//                 module_id
+//             );
+//         }
+//         VMStatus::Error(BACKWARD_INCOMPATIBLE_MODULE_UPDATE) => {
+//             println!("Breaking change detected--publishing aborted. Re-run with --ignore-breaking-changes to publish anyway.");
+//
+//             let old_module = state.get_module_by_id(&module_id)?.unwrap();
+//             let old_api = normalized::Module::new(&old_module);
+//             let new_api = normalized::Module::new(module);
+//
+//             if Compatibility::new(false, true, false)
+//                 .check(&old_api, &new_api)
+//                 .is_err()
+//             {
+//                 // TODO: we could choose to make this more precise by walking the global state and looking for published
+//                 // structs of this type. but probably a bad idea
+//                 println!("Layout API for structs of module {} has changed. Need to do a data migration of published structs", module_id)
+//             } else if Compatibility::new(true, false, false)
+//                 .check(&old_api, &new_api)
+//                 .is_err()
+//             {
+//                 // TODO: this will report false positives if we *are* simultaneously redeploying all dependent modules.
+//                 // but this is not easy to check without walking the global state and looking for everything
+//                 println!("Linking API for structs/functions of module {} has changed. Need to redeploy all dependent modules.", module_id)
+//             }
+//         }
+//         VMStatus::Error(CYCLIC_MODULE_DEPENDENCY) => {
+//             println!(
+//                 "Publishing module {} introduces cyclic dependencies.",
+//                 module_id
+//             );
+//             // find all cycles with an iterative DFS
+//             let all_modules = state.get_all_modules()?;
+//             let code_cache = Modules::new(&all_modules);
+//
+//             let mut stack = vec![];
+//             let mut state = BTreeMap::new();
+//             state.insert(module_id.clone(), true);
+//             for dep in module.immediate_dependencies() {
+//                 stack.push((code_cache.get_module(&dep)?, false));
+//             }
+//
+//             while !stack.is_empty() {
+//                 let (cur, is_exit) = stack.pop().unwrap();
+//                 let cur_id = cur.self_id();
+//                 if is_exit {
+//                     state.insert(cur_id, false);
+//                 } else {
+//                     state.insert(cur_id, true);
+//                     stack.push((cur, true));
+//                     for next in cur.immediate_dependencies() {
+//                         if let Some(is_discovered_but_not_finished) = state.get(&next) {
+//                             if *is_discovered_but_not_finished {
+//                                 let cycle_path: Vec<_> = stack
+//                                     .iter()
+//                                     .filter(|(_, is_exit)| *is_exit)
+//                                     .map(|(m, _)| m.self_id().to_string())
+//                                     .collect();
+//                                 println!(
+//                                     "Cycle detected: {} -> {} -> {}",
+//                                     module_id,
+//                                     cycle_path.join(" -> "),
+//                                     module_id,
+//                                 );
+//                             }
+//                         } else {
+//                             stack.push((code_cache.get_module(&next)?, false));
+//                         }
+//                     }
+//                 }
+//             }
+//             println!("Re-run with --ignore-breaking-changes to publish anyway.")
+//         }
+//         VMStatus::Error(MISSING_DEPENDENCY) => {
+//             let err_indices = error_clone.indices();
+//             let mut diags = Diagnostics::new();
+//             for (ind_kind, table_ind) in err_indices {
+//                 if let IndexKind::FunctionHandle = ind_kind {
+//                     let native_function = &(module.function_defs())[*table_ind as usize];
+//                     let fh = module.function_handle_at(native_function.function);
+//                     let mh = module.module_handle_at(fh.module);
+//                     let function_source_map = unit
+//                         .unit
+//                         .source_map()
+//                         .get_function_source_map(FunctionDefinitionIndex(*table_ind));
+//                     if let Ok(map) = function_source_map {
+//                         let err_string = format!(
+//                             "Missing implementation for the native function {}::{}",
+//                             module.identifier_at(mh.name).as_str(),
+//                             module.identifier_at(fh.name).as_str()
+//                         );
+//                         let diag = Diagnostic::new(
+//                             diagnostics::codes::Declarations::InvalidFunction,
+//                             (map.definition_location, err_string),
+//                             Vec::<(Loc, String)>::new(),
+//                             Vec::<String>::new(),
+//                         );
+//                         diags.add(diag);
+//                     }
+//                 }
+//             }
+//             report_diagnostics(&files, diags)
+//         }
+//         VMStatus::Error(status_code) => {
+//             println!("Publishing failed with unexpected error {:?}", status_code)
+//         }
+//         VMStatus::Executed | VMStatus::MoveAbort(..) | VMStatus::ExecutionFailure { .. } => {
+//             unreachable!()
+//         }
+//     }
+//
+//     Ok(())
+// }
 
 /// Explain an execution error
 pub(crate) fn explain_execution_error(

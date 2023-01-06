@@ -27,6 +27,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crate::adapt::vm::types::Storage;
+use crate::adapt::storage::GoStorage;
+
 type Event = (Vec<u8>, u64, TypeTag, Vec<u8>);
 
 /// subdirectory of `DEFAULT_STORAGE_DIR`/<addr> where resources are stored
@@ -39,30 +42,34 @@ pub const EVENTS_DIR: &str = "events";
 /// file under `DEFAULT_BUILD_DIR` where a registry of generated struct layouts are stored
 pub const STRUCT_LAYOUTS_FILE: &str = "struct_layouts.yaml";
 
-#[derive(Debug)]
 pub struct OnDiskStateView {
     build_dir: PathBuf,
     storage_dir: PathBuf,
+    store: Box<dyn Storage>,
 }
 
 impl OnDiskStateView {
     /// Create an `OnDiskStateView` that reads/writes resource data and modules in `storage_dir`.
-    pub fn create<P: Into<PathBuf>>(build_dir: P, storage_dir: P) -> Result<Self> {
+    pub fn create<P: Into<PathBuf>>(build_dir: P, storage_dir: P, store_param: Box<dyn Storage>) -> Result<Self> {
         let build_dir = build_dir.into();
         if !build_dir.exists() {
             fs::create_dir_all(&build_dir)?;
         }
 
+        // println!("OnDiskStateView ---- create build_dir:{:?}", build_dir);
+
+
         let storage_dir = storage_dir.into();
         if !storage_dir.exists() {
             fs::create_dir_all(&storage_dir)?;
         }
-
+        println!("OnDiskStateView ---- create storage_dir:{:?}", storage_dir);
         Ok(Self {
             build_dir,
             // it is important to canonicalize the path here because `is_data_path()` relies on the
             // fact that storage_dir is canonicalized.
             storage_dir: storage_dir.canonicalize()?,
+            store: store_param,
         })
     }
 
@@ -155,12 +162,12 @@ impl OnDiskStateView {
         addr: AccountAddress,
         tag: StructTag,
     ) -> Result<Option<Vec<u8>>> {
-        Self::get_bytes(&self.get_resource_path(addr, tag))
+        self.get_bytes(&self.get_resource_path(addr, tag))
     }
 
     /// Read the resource bytes stored on-disk at `addr`/`tag`
     fn get_module_bytes(&self, module_id: &ModuleId) -> Result<Option<Vec<u8>>> {
-        Self::get_bytes(&self.get_module_path(module_id))
+        self.get_bytes(&self.get_module_path(module_id))
     }
 
     /// Check if a module at `addr`/`module_id` exists
@@ -183,12 +190,14 @@ impl OnDiskStateView {
         }
     }
 
-    fn get_bytes(path: &Path) -> Result<Option<Vec<u8>>> {
-        Ok(if path.exists() {
-            Some(fs::read(path)?)
-        } else {
-            None
-        })
+    fn get_bytes(&self, path: &Path) -> Result<Option<Vec<u8>>> {
+        let path_bytes: &[u8] = path.to_str().expect("path error").as_bytes();
+        let result = self.store.get(path_bytes).0.unwrap();
+        // println!("get_bytes-------{:?}", result);
+        match  result{
+            None=>Ok(None),
+            Some(x) => Ok(Some(x))
+        }
     }
 
     /// Returns a deserialized representation of the resource value stored at `resource_path`.
@@ -210,7 +219,7 @@ impl OnDiskStateView {
                     TypeTag::Struct(s) => s,
                     t => bail!("Expected to parse struct tag, but got {}", t),
                 };
-                match Self::get_bytes(resource_path)? {
+                match self.get_bytes(resource_path)? {
                     Some(resource_data) => {
                         Some(MoveValueAnnotator::new(self).view_resource(&id, &resource_data)?)
                     }
@@ -222,7 +231,7 @@ impl OnDiskStateView {
 
     fn get_events(&self, events_path: &Path) -> Result<Vec<Event>> {
         Ok(if events_path.exists() {
-            match Self::get_bytes(events_path)? {
+            match self.get_bytes(events_path)? {
                 Some(events_data) => bcs::from_bytes::<Vec<Event>>(&events_data)?,
                 None => vec![],
             }
@@ -231,49 +240,49 @@ impl OnDiskStateView {
         })
     }
 
-    pub fn view_events(&self, events_path: &Path) -> Result<Vec<AnnotatedMoveValue>> {
-        let annotator = MoveValueAnnotator::new(self);
-        self.get_events(events_path)?
-            .iter()
-            .map(|(_, _, event_type, event_data)| annotator.view_value(event_type, event_data))
-            .collect()
-    }
+    // pub fn view_events(&mut self, events_path: &Path) -> Result<Vec<AnnotatedMoveValue>> {
+    //     let annotator = MoveValueAnnotator::new(self);
+    //     self.get_events(events_path)?
+    //         .iter()
+    //         .map(|(_, _, event_type, event_data)| annotator.view_value(event_type, event_data))
+    //         .collect()
+    // }
 
-    fn view_bytecode(path: &Path, is_module: bool) -> Result<Option<String>> {
-        if path.is_dir() {
-            bail!("Bad bytecode path {:?}. Needed file, found directory", path)
-        }
+    // fn view_bytecode(path: &Path, is_module: bool) -> Result<Option<String>> {
+    //     if path.is_dir() {
+    //         bail!("Bad bytecode path {:?}. Needed file, found directory", path)
+    //     }
+    //
+    //     Ok(match self.get_bytes(path)? {
+    //         Some(bytes) => {
+    //             let module: CompiledModule;
+    //             let script: CompiledScript;
+    //             let view = if is_module {
+    //                 module = CompiledModule::deserialize(&bytes)
+    //                     .map_err(|e| anyhow!("Failure deserializing module: {:?}", e))?;
+    //                 BinaryIndexedView::Module(&module)
+    //             } else {
+    //                 script = CompiledScript::deserialize(&bytes)
+    //                     .map_err(|e| anyhow!("Failure deserializing script: {:?}", e))?;
+    //                 BinaryIndexedView::Script(&script)
+    //             };
+    //             // TODO: find or create source map and pass it to disassembler
+    //             // let d: Disassembler =
+    //             //     Disassembler::from_view(view, Spanned::unsafe_no_loc(()).loc)?;
+    //             // Some(d.disassemble()?)
+    //             None
+    //         }
+    //         None => None,
+    //     })
+    // }
 
-        Ok(match Self::get_bytes(path)? {
-            Some(bytes) => {
-                let module: CompiledModule;
-                let script: CompiledScript;
-                let view = if is_module {
-                    module = CompiledModule::deserialize(&bytes)
-                        .map_err(|e| anyhow!("Failure deserializing module: {:?}", e))?;
-                    BinaryIndexedView::Module(&module)
-                } else {
-                    script = CompiledScript::deserialize(&bytes)
-                        .map_err(|e| anyhow!("Failure deserializing script: {:?}", e))?;
-                    BinaryIndexedView::Script(&script)
-                };
-                // TODO: find or create source map and pass it to disassembler
-                // let d: Disassembler =
-                //     Disassembler::from_view(view, Spanned::unsafe_no_loc(()).loc)?;
-                // Some(d.disassemble()?)
-                None
-            }
-            None => None,
-        })
-    }
-
-    pub fn view_module(module_path: &Path) -> Result<Option<String>> {
-        Self::view_bytecode(module_path, true)
-    }
-
-    pub fn view_script(script_path: &Path) -> Result<Option<String>> {
-        Self::view_bytecode(script_path, false)
-    }
+    // pub fn view_module(module_path: &Path) -> Result<Option<String>> {
+    //     Self::view_bytecode(module_path, true)
+    // }
+    //
+    // pub fn view_script(script_path: &Path) -> Result<Option<String>> {
+    //     Self::view_bytecode(script_path, false)
+    // }
 
     /// Delete resource stored on disk at the path `addr`/`tag`
     pub fn delete_resource(&self, addr: AccountAddress, tag: StructTag) -> Result<()> {
@@ -289,7 +298,7 @@ impl OnDiskStateView {
     }
 
     pub fn save_resource(
-        &self,
+        &mut self,
         addr: AccountAddress,
         tag: StructTag,
         bcs_bytes: &[u8],
@@ -298,11 +307,14 @@ impl OnDiskStateView {
         if !path.exists() {
             fs::create_dir_all(path.parent().unwrap())?;
         }
-        Ok(fs::write(path, bcs_bytes)?)
+
+        let path_bytes: &[u8] = path.to_str().expect("path error").as_bytes();
+        self.store.set(path_bytes, bcs_bytes);
+        Ok(())
     }
 
     pub fn save_event(
-        &self,
+        &mut self,
         event_key: &[u8],
         event_sequence_number: u64,
         event_type: TypeTag,
@@ -321,31 +333,37 @@ impl OnDiskStateView {
             event_type,
             event_data,
         ));
-        Ok(fs::write(path, &bcs::to_bytes(&event_log)?)?)
+
+        let path_bytes: &[u8] = path.to_str().expect("path error").as_bytes();
+        let bcs_bytes = &bcs::to_bytes(&event_log)?;
+        self.store.set(path_bytes, bcs_bytes);
+        Ok(())
     }
 
     /// Save `module` on disk under the path `module.address()`/`module.name()`
-    pub fn save_module(&self, module_id: &ModuleId, module_bytes: &[u8]) -> Result<()> {
+    pub fn save_module(&mut self, module_id: &ModuleId, module_bytes: &[u8]) -> Result<()> {
         let path = self.get_module_path(module_id);
-        if !path.exists() {
-            fs::create_dir_all(path.parent().unwrap())?
-        }
-        println!("save_module----------------{:?}", path);
-        Ok(fs::write(path, module_bytes)?)
+        let path_bytes: &[u8] = path.to_str().expect("path error").as_bytes();
+        self.store.set(path_bytes, module_bytes);
+        Ok(())
     }
 
     /// Save the YAML encoding `layout` on disk under `build_dir/layouts/id`.
-    pub fn save_struct_layouts(&self, layouts: &str) -> Result<()> {
+    pub fn save_struct_layouts(&mut self, layouts: &str) -> Result<()> {
         let layouts_file = self.struct_layouts_file();
         if !layouts_file.exists() {
             fs::create_dir_all(layouts_file.parent().unwrap())?
         }
-        Ok(fs::write(layouts_file, layouts)?)
+
+        let path_bytes: &[u8] = layouts_file.to_str().expect("path error").as_bytes();
+        let bcs_bytes = &bcs::to_bytes(&layouts)?;
+        self.store.set(path_bytes, bcs_bytes);
+        Ok(())
     }
 
     /// Save all the modules in the local cache, re-generate mv_interfaces if required.
     pub fn save_modules<'a>(
-        &self,
+        &mut self,
         modules: impl IntoIterator<Item = &'a (ModuleId, Vec<u8>)>,
     ) -> Result<()> {
         for (module_id, module_bytes) in modules {
@@ -395,7 +413,7 @@ impl OnDiskStateView {
     pub fn get_all_modules(&self) -> Result<Vec<CompiledModule>> {
         self.module_paths()
             .map(|path| {
-                CompiledModule::deserialize(&Self::get_bytes(&path)?.unwrap())
+                CompiledModule::deserialize(&self.get_bytes(&path)?.unwrap())
                     .map_err(|e| anyhow!("Failed to deserialized module: {:?}", e))
             })
             .collect::<Result<Vec<CompiledModule>>>()
@@ -436,12 +454,12 @@ impl GetModule for &OnDiskStateView {
     }
 }
 
-impl Default for OnDiskStateView {
-    fn default() -> Self {
-        OnDiskStateView::create(Path::new(DEFAULT_BUILD_DIR), Path::new(DEFAULT_STORAGE_DIR))
-            .expect("Failure creating OnDiskStateView")
-    }
-}
+// impl Default for OnDiskStateView {
+//     fn default() -> Self {
+//         OnDiskStateView::create(Path::new(DEFAULT_BUILD_DIR), Path::new(DEFAULT_STORAGE_DIR), Path::new(DEFAULT_STORAGE_DIR))
+//             .expect("Failure creating OnDiskStateView")
+//     }
+// }
 
 // wrappers of TypeTag, StructTag, Vec<TypeTag> to allow us to implement the FromStr/ToString traits
 #[derive(Debug)]

@@ -4,7 +4,7 @@
 
 use crate::{
     wrap::utils::{
-        explain_publish_changeset, explain_publish_error, get_gas_status, module,
+        explain_publish_changeset, get_gas_status, module,
         on_disk_state_view::OnDiskStateView,
     },
     NativeFunctionRecord,
@@ -20,7 +20,7 @@ use std::collections::BTreeMap;
 pub fn publish(
     natives: impl IntoIterator<Item = NativeFunctionRecord>,
     cost_table: &CostTable,
-    state: &OnDiskStateView,
+    state: &mut OnDiskStateView,
     package: &CompiledPackage,
     no_republish: bool,
     ignore_breaking_changes: bool,
@@ -132,7 +132,7 @@ pub fn publish(
                                 .into_iter()
                                 .find(|&x| x.unit.name().as_str() == module_id.name().as_str())
                             {
-                                explain_publish_error(err, state, unit)?
+                                //explain_publish_error(err, state, unit)?
                             } else {
                                 println!("Unable to locate the module in the multi-module publishing error");
                             }
@@ -148,10 +148,11 @@ pub fn publish(
                 let module_bytes = unit.unit.serialize(bytecode_version);
                 let id = module(&unit.unit)?.self_id();
                 let sender = *id.address();
-
+                println!("publish---debug------10---0");
                 let res = session.publish_module(module_bytes, sender, &mut gas_status);
+                println!("publish---debug------10---1");
                 if let Err(err) = res {
-                    explain_publish_error(err, state, unit)?;
+                    //explain_publish_error(err, state, unit)?;
                     has_error = true;
                     break;
                 }

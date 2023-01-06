@@ -54,6 +54,31 @@ enum GoError {
 typedef int32_t GoError;
 
 /**
+ * An opaque type. `*gas_meter_t` represents a pointer to Go memory holding the gas meter.
+ */
+typedef struct gas_meter_t {
+  uint8_t _private[0];
+} gas_meter_t;
+
+typedef struct db_t {
+  uint8_t _private[0];
+} db_t;
+
+/**
+ * A view into a `Option<&[u8]>`, created and maintained by Rust.
+ *
+ * This can be copied into a []byte in Go.
+ */
+typedef struct U8SliceView {
+  /**
+   * True if and only if this is None. If this is true, the other fields must be ignored.
+   */
+  bool is_none;
+  const uint8_t *ptr;
+  uintptr_t len;
+} U8SliceView;
+
+/**
  * An optional Vector type that requires explicit creation and destruction
  * and can be sent via FFI.
  * It can be created from `Option<Vec<u8>>` and be converted into `Option<Vec<u8>>`.
@@ -173,47 +198,6 @@ typedef struct UnmanagedVector {
   uintptr_t cap;
 } UnmanagedVector;
 
-/**
- * A view into an externally owned byte slice (Go `[]byte`).
- * Use this for the current call only. A view cannot be copied for safety reasons.
- * If you need a copy, use [`ByteSliceView::to_owned`].
- *
- * Go's nil value is fully supported, such that we can differentiate between nil and an empty slice.
- */
-typedef struct ByteSliceView {
-  /**
-   * True if and only if the byte slice is nil in Go. If this is true, the other fields must be ignored.
-   */
-  bool is_nil;
-  const uint8_t *ptr;
-  uintptr_t len;
-} ByteSliceView;
-
-/**
- * An opaque type. `*gas_meter_t` represents a pointer to Go memory holding the gas meter.
- */
-typedef struct gas_meter_t {
-  uint8_t _private[0];
-} gas_meter_t;
-
-typedef struct db_t {
-  uint8_t _private[0];
-} db_t;
-
-/**
- * A view into a `Option<&[u8]>`, created and maintained by Rust.
- *
- * This can be copied into a []byte in Go.
- */
-typedef struct U8SliceView {
-  /**
-   * True if and only if this is None. If this is true, the other fields must be ignored.
-   */
-  bool is_none;
-  const uint8_t *ptr;
-  uintptr_t len;
-} U8SliceView;
-
 typedef struct iterator_t {
   /**
    * An ID assigned to this contract call
@@ -245,6 +229,22 @@ typedef struct Db {
   struct Db_vtable vtable;
 } Db;
 
+/**
+ * A view into an externally owned byte slice (Go `[]byte`).
+ * Use this for the current call only. A view cannot be copied for safety reasons.
+ * If you need a copy, use [`ByteSliceView::to_owned`].
+ *
+ * Go's nil value is fully supported, such that we can differentiate between nil and an empty slice.
+ */
+typedef struct ByteSliceView {
+  /**
+   * True if and only if the byte slice is nil in Go. If this is true, the other fields must be ignored.
+   */
+  bool is_nil;
+  const uint8_t *ptr;
+  uintptr_t len;
+} ByteSliceView;
+
 typedef struct api_t {
   uint8_t _private[0];
 } api_t;
@@ -272,9 +272,9 @@ typedef struct GoQuerier {
   struct Querier_vtable vtable;
 } GoQuerier;
 
-void say_publish(uint64_t gas_limit);
+void say_publish(uint64_t gas_limit, struct Db db);
 
-void say_run(uint64_t gas_limit);
+void say_run(uint64_t gas_limit, struct Db db);
 
 struct UnmanagedVector say_input_output(struct ByteSliceView code,
                                         struct Db db,

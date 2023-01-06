@@ -6,6 +6,9 @@ use anyhow::Result;
 use move_command_line_common::env::get_bytecode_version_from_env;
 use move_package::{compilation::compiled_package::CompiledPackage, BuildConfig};
 use std::path::{Path, PathBuf};
+use crate::adapt::db::Db;
+use crate::adapt::vm::types::Storage;
+use crate::adapt::storage::GoStorage;
 
 /// The PackageContext controls the package that the CLI is executing with respect to, and handles the
 /// creation of the `OnDiskStateView` with the package's dependencies.
@@ -34,9 +37,10 @@ impl PackageContext {
     /// NOTE: this is the only way to get a state view in Move CLI, and thus, this function needs
     /// to be run before every command that needs a state view, i.e., `publish`, `run`,
     /// `view`, and `doctor`.
-    pub fn prepare_state(&self, storage_dir: &Path) -> Result<OnDiskStateView> {
+    pub fn prepare_state(&self, storage_dir: &Path, store_param: &Path, db: Db) -> Result<OnDiskStateView> {
         let bytecode_version = get_bytecode_version_from_env();
-        let state = OnDiskStateView::create(self.build_dir.as_path(), storage_dir)?;
+
+        let mut state  = OnDiskStateView::create(self.build_dir.as_path(), storage_dir, Box::new(GoStorage::new(db)))?;
 
         println!("prepare_state------1--{:?},{:?}", self.build_dir, storage_dir);
 

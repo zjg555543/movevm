@@ -34,44 +34,47 @@ func ApiMoveVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// For C.GoString documentation see https://pkg.go.dev/cmd/cgo and
-	// https://gist.github.com/helinwang/2c7bd2867ea5110f70e6431a7c80cd9b
 	version_copy := C.GoString(version_ptr)
 	return version_copy, nil
 }
 
-func ApiPublish(gas_limited uint64) {
-	C.say_publish(cu64(gas_limited))
+func ApiPublish(env []byte, info []byte, msg []byte, gasMeter *GasMeter, store KVStore,
+	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) {
+	callID := startCall()
+	defer endCall(callID)
+
+	dbState := buildDBState(store, callID)
+	db := buildDB(&dbState, gasMeter)
+	C.say_publish(cu64(gasLimit), db)
 }
 
-func ApiRun(gas_limited uint64) {
-	C.say_run(cu64(gas_limited))
+func ApiRun(env []byte, info []byte, msg []byte, gasMeter *GasMeter, store KVStore,
+	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) {
+	callID := startCall()
+	defer endCall(callID)
+
+	dbState := buildDBState(store, callID)
+	db := buildDB(&dbState, gasMeter)
+	C.say_run(cu64(gasLimit), db)
 }
 
 const TESTING_GAS_LIMIT = uint64(500_000_000_000) // ~0.5ms
-func ApiInputOutput(input []byte) ([]byte, error) {
-	//C.say_input_output(cu64(gas_limited))
+func ApiInputOutput(env []byte, info []byte, msg []byte, gasMeter *GasMeter, store KVStore,
+	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) ([]byte, error) {
 
-	w := makeView(input)
-	defer runtime.KeepAlive(input)
+	w := makeView(env)
+	defer runtime.KeepAlive(env)
 	errmsg := newUnmanagedVector(nil)
 
-	gasMeter1 := NewMockGasMeter(TESTING_GAS_LIMIT)
-	gasMeter2 := NewMockGasMeter(TESTING_GAS_LIMIT)
-	store := NewLookup(gasMeter1)
-	igasMeter2 := GasMeter(gasMeter2)
-	store.SetGasMeter(gasMeter2)
 	api := NewMockAPI()
-	balance := types.Coins{types.NewCoin(250, "ATOM")}
-	querier := DefaultQuerier(MOCK_CONTRACT_ADDR, balance)
 
 	callID := startCall()
 	defer endCall(callID)
 
 	dbState := buildDBState(store, callID)
-	db := buildDB(&dbState, &igasMeter2)
+	db := buildDB(&dbState, gasMeter)
 	a := buildAPI(api)
-	q := buildQuerier(&querier)
+	q := buildQuerier(querier)
 
 	result, err := C.say_input_output(w, db, a, q, &errmsg)
 	if err != nil {

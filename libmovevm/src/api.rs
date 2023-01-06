@@ -43,12 +43,13 @@ use crate::{
 
 
 #[no_mangle]
-pub extern "C" fn say_publish(gas_limit: u64) {
-    println!("--------------say publish-------------- ");
-    test_publish();
+pub extern "C" fn say_publish(gas_limit: u64, db: Db) {
+    println!("--------------say publish start-------------- ");
+    test_publish(db);
+    println!("--------------say publish end-------------- ");
 }
 
-pub fn test_publish()-> Result<()> {
+pub fn test_publish(db: Db)-> Result<()> {
     let path = Some(PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme"));
     let storage_dir = PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme/storage/");
     let build_config = BuildConfig::default();
@@ -64,19 +65,22 @@ pub fn test_publish()-> Result<()> {
     //     },
     // };
 
-    let state = context.prepare_state(&storage_dir)?;
-
+    println!("--------------test_publish-------------- 0 ");
+    let mut state = context.prepare_state(&storage_dir, &storage_dir, db)?;
+    println!("--------------test_publish-------------- 1 ");
 
     // let error_descriptions: ErrorMapping = bcs::from_bytes(move_stdlib::error_descriptions())?;
     let cost_table = &move_vm_test_utils::gas_schedule::INITIAL_COST_SCHEDULE;
     let addr = AccountAddress::from_hex_literal("0x1").unwrap();
 
+    println!("--------------test_publish-------------- 1 ");
     let natives : Vec<NativeFunctionRecord> = all_natives(addr, GasParameters::zeros())
         .into_iter()
         .chain(nursery_natives(addr, NurseryGasParameters::zeros()))
         .collect();
 
     let opt_test = None;
+    println!("--------------test_publish-------------- 2 ");
 
     let no_republish = false;
     let ignore_breaking_changes = false;
@@ -85,7 +89,7 @@ pub fn test_publish()-> Result<()> {
     publish(
         natives,
         cost_table,
-        &state,
+        &mut state,
         context.package(),
         no_republish,
         ignore_breaking_changes,
@@ -100,19 +104,21 @@ pub fn test_publish()-> Result<()> {
 
 
 #[no_mangle]
-pub extern "C" fn say_run(gas_limit: u64) {
-    println!("--------------say run-------------- ");
-    test_run();
+pub extern "C" fn say_run(gas_limit: u64, db: Db) {
+    println!("--------------say run start-------------- ");
+    test_run(db);
+    println!("--------------say run end-------------- ");
 }
 
-pub fn test_run()-> Result<()> {
+pub fn test_run(db: Db)-> Result<()> {
     let path = Some(PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme"));
     let storage_dir = PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme/storage/");
     let build_config = BuildConfig::default();
     // let script_name Option<String> = None;
     let script_file = Path::new("/Users/oker/workspace/move/movevm/contracts/readme/sources/test_script.move");
     let context = PackageContext::new(&path, &build_config)?;
-    let state = context.prepare_state(&storage_dir)?;
+    // let store = GoStorage::new(db);
+    let mut state = context.prepare_state(&storage_dir, &storage_dir, db)?;
     // let error_descriptions: ErrorMapping = bcs::from_bytes(move_stdlib::error_descriptions())?;
     let cost_table = &move_vm_test_utils::gas_schedule::INITIAL_COST_SCHEDULE;
     let addr = AccountAddress::from_hex_literal("0x1").unwrap();
@@ -130,7 +136,7 @@ pub fn test_run()-> Result<()> {
         natives,
         cost_table,
         &ErrorMapping::default(),
-        &state,
+        &mut state,
         context.package(),
         &script_file,
         &None,
@@ -151,7 +157,7 @@ pub extern "C" fn say_input_output(code: ByteSliceView,
                                    api: GoApi,
                                    querier: GoQuerier,
                                    error_msg: Option<&mut UnmanagedVector>) -> UnmanagedVector{
-    println!("--------------say input output-------------- ");
+    println!("--------------say input output start-------------- ");
 
     let arg1 = code.read();
     println!("code:{:?}", arg1);
@@ -208,6 +214,7 @@ pub extern "C" fn say_input_output(code: ByteSliceView,
     vec.push(3);
     vec.push(4);
 
+    println!("--------------say input output end-------------- ");
     UnmanagedVector::new(Some(vec))
 
 }

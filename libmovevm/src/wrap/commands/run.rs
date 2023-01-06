@@ -29,7 +29,7 @@ pub fn run(
     natives: impl IntoIterator<Item = NativeFunctionRecord>,
     cost_table: &CostTable,
     error_descriptions: &ErrorMapping,
-    state: &OnDiskStateView,
+    state: &mut OnDiskStateView,
     package: &CompiledPackage,
     script_path: &Path,
     script_name_opt: &Option<String>,

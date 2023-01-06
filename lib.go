@@ -2,20 +2,35 @@ package cosmwasm
 
 import (
 	"github.com/zjg555543/movevm/api"
+	"github.com/zjg555543/movevm/types"
 )
 
-func LibwasmvmVersion() (string, error) {
+type KVStore = api.KVStore
+
+// GoAPI is a reference to some "precompiles", go callbacks
+type GoAPI = api.GoAPI
+
+// Querier lets us make read-only queries on other modules
+type Querier = types.Querier
+
+// GasMeter is a read-only version of the sdk gas meter
+type GasMeter = api.GasMeter
+
+func Version() (string, error) {
 	return api.ApiMoveVersion()
 }
 
-func LibPublish(gas_limited uint64) {
-	api.ApiPublish(gas_limited)
+func Publish(env []byte, info []byte, msg []byte, gasMeter GasMeter, store KVStore,
+	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) {
+	api.ApiPublish(env, info, msg, &gasMeter, store, goApi, querier, gasLimit, printDebug)
 }
 
-func LibRun(gas_limited uint64) {
-	api.ApiRun(gas_limited)
+func Run(env []byte, info []byte, msg []byte, gasMeter GasMeter, store KVStore,
+	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) {
+	api.ApiRun(env, info, msg, &gasMeter, store, goApi, querier, gasLimit, printDebug)
 }
 
-func LibInputOutput(input []byte) ([]byte, error) {
-	return api.ApiInputOutput(input)
+func InputOutput(env []byte, info []byte, msg []byte, gasMeter GasMeter, store KVStore,
+	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) ([]byte, error) {
+	return api.ApiInputOutput(env, info, msg, &gasMeter, store, goApi, querier, gasLimit, printDebug)
 }
