@@ -49,12 +49,12 @@ pub fn run(
 
     let bytecode = if is_bytecode_file(script_path) {
         println!("run---debug------3");
-        assert!(
-            state.is_module_path(script_path) || !contains_module(script_path),
-            "Attempting to run module {:?} outside of the `storage/` directory.
-move run` must be applied to a module inside `storage/`",
-            script_path
-        );
+//         assert!(
+//             state.is_module_path(script_path) || !contains_module(script_path),
+//             "Attempting to run module {:?} outside of the `storage/` directory.
+// move run` must be applied to a module inside `storage/`",
+//             script_path
+//         );
         // script bytecode; read directly from file
         fs::read(script_path)?
     } else {

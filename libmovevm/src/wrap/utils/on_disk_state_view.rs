@@ -134,8 +134,11 @@ impl OnDiskStateView {
 
     fn get_module_path(&self, module_id: &ModuleId) -> PathBuf {
         let mut path = self.get_addr_path(module_id.address());
+        // println!("{:?}", path);
         path.push(MODULES_DIR);
+        // println!("{:?}", path);
         path.push(module_id.name().to_string());
+        // println!("{:?}", path);
         path.with_extension(MOVE_COMPILED_EXTENSION)
     }
 

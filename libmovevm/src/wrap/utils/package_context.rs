@@ -1,6 +1,3 @@
-// Copyright (c) The Diem Core Contributors
-// Copyright (c) The Move Contributors
-// SPDX-License-Identifier: Apache-2.0
 use crate::{wrap::utils::OnDiskStateView, DEFAULT_BUILD_DIR};
 use anyhow::Result;
 use move_command_line_common::env::get_bytecode_version_from_env;
@@ -62,9 +59,9 @@ impl PackageContext {
             module.serialize_for_version(bytecode_version, &mut module_bytes)?;
             serialized_modules.push((self_id, module_bytes));
         }
-        println!("prepare_state--------save_modules");
+        // println!("prepare_state--------save_modules start");
         state.save_modules(&serialized_modules)?;
-
+        // println!("prepare_state--------save_modules end");
         Ok(state)
     }
 

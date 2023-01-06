@@ -8,20 +8,13 @@ use crate::adapt::error::{handle_c_error_binary, handle_c_error_default, handle_
 use crate::adapt::args::{AVAILABLE_CAPABILITIES_ARG, CACHE_ARG, CHECKSUM_ARG, DATA_DIR_ARG, WASM_ARG};
 use crate::adapt::querier::GoQuerier;
 use crate::adapt::error::GoError;
-use crate::adapt::vm::types::GasInfo;
-use crate::adapt::vm::types::Storage;
+use crate::adapt::vm::types::{GasInfo, Storage};
 use crate::adapt::storage::GoStorage;
 
 use cosmwasm_std::{
-    coins, from_binary, to_vec, AllBalanceResponse, BankQuery, Empty, QueryRequest,
+    coins, from_binary, to_vec, AllBalanceResponse, BankQuery, Empty, QueryRequest,Binary,
+    ContractResult, SystemError, SystemResult,coin, BalanceResponse,
 };
-use cosmwasm_std::{Binary, ContractResult, SystemError, SystemResult};
-
-
-use cosmwasm_std::{
-    coin, BalanceResponse,
-};
-
 
 use anyhow::Result;
 use move_core_types::{
@@ -56,46 +49,27 @@ pub fn test_publish(db: Db)-> Result<()> {
 
     // let context :PackageContext;
     let context = PackageContext::new(&path, &build_config)?;
-    // let f = match result_context {
-    //     Ok(result) => {
-    //         context = result
-    //     },
-    //     Err(error) => {
-    //         panic!("Problem opening the file: {:?}", error)
-    //     },
-    // };
 
     println!("--------------test_publish-------------- 0 ");
     let mut state = context.prepare_state(&storage_dir, &storage_dir, db)?;
     println!("--------------test_publish-------------- 1 ");
 
-    // let error_descriptions: ErrorMapping = bcs::from_bytes(move_stdlib::error_descriptions())?;
     let cost_table = &move_vm_test_utils::gas_schedule::INITIAL_COST_SCHEDULE;
     let addr = AccountAddress::from_hex_literal("0x1").unwrap();
 
-    println!("--------------test_publish-------------- 1 ");
+    println!("--------------test_publish-------------- 2 ");
     let natives : Vec<NativeFunctionRecord> = all_natives(addr, GasParameters::zeros())
         .into_iter()
         .chain(nursery_natives(addr, NurseryGasParameters::zeros()))
         .collect();
 
-    let opt_test = None;
-    println!("--------------test_publish-------------- 2 ");
+    println!("--------------test_publish-------------- 3 ");
 
-    let no_republish = false;
-    let ignore_breaking_changes = false;
-    let with_deps = false;
-    let bundle = false;
     publish(
         natives,
         cost_table,
         &mut state,
         context.package(),
-        no_republish,
-        ignore_breaking_changes,
-        with_deps,
-        bundle,
-        opt_test,
         true,
     );
 
@@ -114,12 +88,9 @@ pub fn test_run(db: Db)-> Result<()> {
     let path = Some(PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme"));
     let storage_dir = PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme/storage/");
     let build_config = BuildConfig::default();
-    // let script_name Option<String> = None;
     let script_file = Path::new("/Users/oker/workspace/move/movevm/contracts/readme/sources/test_script.move");
     let context = PackageContext::new(&path, &build_config)?;
-    // let store = GoStorage::new(db);
     let mut state = context.prepare_state(&storage_dir, &storage_dir, db)?;
-    // let error_descriptions: ErrorMapping = bcs::from_bytes(move_stdlib::error_descriptions())?;
     let cost_table = &move_vm_test_utils::gas_schedule::INITIAL_COST_SCHEDULE;
     let addr = AccountAddress::from_hex_literal("0x1").unwrap();
     let natives : Vec<NativeFunctionRecord> = all_natives(addr, GasParameters::zeros())
@@ -162,10 +133,6 @@ pub extern "C" fn say_input_output(code: ByteSliceView,
     let arg1 = code.read();
     println!("code:{:?}", arg1);
 
-    // test error msg
-    // let res: Result<Vec<u8>, Error> = Err(Error::unset_arg(CACHE_ARG));
-    // handle_c_error_binary(res, error_msg);
-
     // for query test
     let mut output = UnmanagedVector::default();
     let mut error_msg = UnmanagedVector::default();
@@ -204,8 +171,6 @@ pub extern "C" fn say_input_output(code: ByteSliceView,
     let AllBalanceResponse { amount } = from_binary(&bin_data).unwrap();
     println!("result{:?}", amount);
 
-
-    // for store.get(&key) and set
     test_db(db);
 
     let mut vec = Vec::new();
@@ -216,7 +181,6 @@ pub extern "C" fn say_input_output(code: ByteSliceView,
 
     println!("--------------say input output end-------------- ");
     UnmanagedVector::new(Some(vec))
-
 }
 
 pub fn test_db(db: Db){
