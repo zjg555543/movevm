@@ -19,6 +19,8 @@ func main() {
 
 	testByte := []byte("1234567890")
 
+	wasmvm.Build(gasMeter, store)
+
 	moduleBytes := readModule("/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/Test.mv")
 
 	sender2 := []byte("0x2")

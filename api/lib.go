@@ -38,6 +38,15 @@ func ApiMoveVersion() (string, error) {
 	return version_copy, nil
 }
 
+func ApiBuild(gasMeter *GasMeter, store KVStore) {
+	callID := startCall()
+	defer endCall(callID)
+
+	dbState := buildDBState(store, callID)
+	db := buildDB(&dbState, gasMeter)
+	C.say_build(db)
+}
+
 func ApiPublish(env []byte, info []byte, msg []byte, gasMeter *GasMeter, store KVStore,
 	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) {
 

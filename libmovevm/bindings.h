@@ -54,22 +54,6 @@ enum GoError {
 typedef int32_t GoError;
 
 /**
- * A view into an externally owned byte slice (Go `[]byte`).
- * Use this for the current call only. A view cannot be copied for safety reasons.
- * If you need a copy, use [`ByteSliceView::to_owned`].
- *
- * Go's nil value is fully supported, such that we can differentiate between nil and an empty slice.
- */
-typedef struct ByteSliceView {
-  /**
-   * True if and only if the byte slice is nil in Go. If this is true, the other fields must be ignored.
-   */
-  bool is_nil;
-  const uint8_t *ptr;
-  uintptr_t len;
-} ByteSliceView;
-
-/**
  * An opaque type. `*gas_meter_t` represents a pointer to Go memory holding the gas meter.
  */
 typedef struct gas_meter_t {
@@ -245,6 +229,22 @@ typedef struct Db {
   struct Db_vtable vtable;
 } Db;
 
+/**
+ * A view into an externally owned byte slice (Go `[]byte`).
+ * Use this for the current call only. A view cannot be copied for safety reasons.
+ * If you need a copy, use [`ByteSliceView::to_owned`].
+ *
+ * Go's nil value is fully supported, such that we can differentiate between nil and an empty slice.
+ */
+typedef struct ByteSliceView {
+  /**
+   * True if and only if the byte slice is nil in Go. If this is true, the other fields must be ignored.
+   */
+  bool is_nil;
+  const uint8_t *ptr;
+  uintptr_t len;
+} ByteSliceView;
+
 typedef struct api_t {
   uint8_t _private[0];
 } api_t;
@@ -271,6 +271,8 @@ typedef struct GoQuerier {
   const struct querier_t *state;
   struct Querier_vtable vtable;
 } GoQuerier;
+
+void say_build(struct Db db);
 
 void say_publish(struct ByteSliceView module_code, struct ByteSliceView sender, struct Db db);
 

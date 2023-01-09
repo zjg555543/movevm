@@ -20,6 +20,10 @@ func Version() (string, error) {
 	return api.ApiMoveVersion()
 }
 
+func Build(gasMeter GasMeter, store KVStore) {
+	api.ApiBuild(&gasMeter, store)
+}
+
 func Publish(env []byte, info []byte, msg []byte, gasMeter GasMeter, store KVStore,
 	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) {
 	api.ApiPublish(env, info, msg, &gasMeter, store, goApi, querier, gasLimit, printDebug)

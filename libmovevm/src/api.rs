@@ -36,6 +36,23 @@ use crate::{
 
 
 #[no_mangle]
+pub extern "C" fn say_build(db: Db) {
+    println!("--------------say build start-------------- ");
+    test_build(db);
+    println!("--------------say build end-------------- ");
+}
+
+pub fn test_build(db: Db)-> Result<()> {
+    let path = Some(PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme"));
+    let storage_dir = PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme/storage/");
+    let build_config = BuildConfig::default();
+    let context = PackageContext::new(&path, &build_config)?;
+    let mut state = context.prepare_state(&storage_dir, &storage_dir, db)?;
+
+    Ok(())
+}
+
+#[no_mangle]
 pub extern "C" fn say_publish(module_code: ByteSliceView, sender: ByteSliceView, db: Db) {
     println!("--------------say publish start-------------- ");
 
