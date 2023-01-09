@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	wasmvm "github.com/zjg555543/movevm"
+	movevm "github.com/zjg555543/movevm"
 	"github.com/zjg555543/movevm/api"
 	"github.com/zjg555543/movevm/types"
 	"io/ioutil"
@@ -10,7 +10,7 @@ import (
 
 // This is just a demo to ensure we can compile a static go binary
 func main() {
-	version, _ := wasmvm.Version()
+	version, _ := movevm.Version()
 	fmt.Println("finished", version)
 
 	gasMeter := api.NewMockGasMeter(api.TESTING_GAS_LIMIT)
@@ -19,7 +19,7 @@ func main() {
 
 	testByte := []byte("1234567890")
 
-	wasmvm.Build(gasMeter, store)
+	movevm.Build(gasMeter, store)
 
 	pathList := [...]string{
 		"/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/dependencies/MoveNursery/debug.mv",
@@ -43,21 +43,21 @@ func main() {
 		"/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/dependencies/MoveNursery/vault.mv",
 	}
 	for _, s := range pathList {
-		wasmvm.Publish(readModule(s), []byte("0x1"), testByte, gasMeter, store, nil, nil, 10000, false)
+		movevm.Publish(readModule(s), []byte("0x1"), testByte, gasMeter, store, nil, nil, 10000, false)
 	}
 
 	moduleBytes2 := readModule("/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/Test.mv")
-	wasmvm.Publish(moduleBytes2, []byte("0x2"), testByte, gasMeter, store, nil, nil, 10000, false)
+	movevm.Publish(moduleBytes2, []byte("0x2"), testByte, gasMeter, store, nil, nil, 10000, false)
 
 	moduleBytes3 := readModule("/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/Caller.mv")
-	wasmvm.Publish(moduleBytes3, []byte("0x3"), testByte, gasMeter, store, nil, nil, 10000, false)
+	movevm.Publish(moduleBytes3, []byte("0x3"), testByte, gasMeter, store, nil, nil, 10000, false)
 
 	scriptBytes := readModule("/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_scripts/test_script.mv")
-	wasmvm.Run(scriptBytes, []byte("0xF"), testByte, gasMeter, store, nil, nil, 10000, false)
+	movevm.Run(scriptBytes, []byte("0xF"), testByte, gasMeter, store, nil, nil, 10000, false)
 
 	balance := types.Coins{types.NewCoin(250, "ATOM")}
 	querier := api.DefaultQuerier(api.MOCK_CONTRACT_ADDR, balance)
-	result, err := wasmvm.InputOutput(testByte, testByte, testByte, gasMeter, store, nil, &querier, 10000, false)
+	result, err := movevm.InputOutput(testByte, testByte, testByte, gasMeter, store, nil, &querier, 10000, false)
 	if err != nil {
 		fmt.Println(err)
 	} else {

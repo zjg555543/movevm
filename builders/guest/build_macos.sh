@@ -5,9 +5,6 @@ set -o errexit -o nounset -o pipefail
 export PATH="/opt/osxcross/target/bin:$PATH"
 export LIBZ_SYS_STATIC=1
 
-# See https://github.com/CosmWasm/wasmvm/issues/222#issuecomment-880616953 for two approaches to
-# enable stripping through cargo (if that is desired).
-
 echo "Starting aarch64-apple-darwin build"
 export CC=aarch64-apple-darwin20.4-clang
 export CXX=aarch64-apple-darwin20.4-clang++

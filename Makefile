@@ -11,8 +11,8 @@ USER_GROUP = $(shell id -g)
 SHARED_LIB_SRC = "" # File name of the shared library as created by the Rust build system
 SHARED_LIB_DST = "" # File name of the shared library that we store
 ifeq ($(OS),Windows_NT)
-	SHARED_LIB_SRC = wasmvm.dll
-	SHARED_LIB_DST = wasmvm.dll
+	SHARED_LIB_SRC = movevm.dll
+	SHARED_LIB_DST = movevm.dll
 else
 	UNAME_S := $(shell uname -s)
 	ifeq ($(UNAME_S),Linux)
@@ -42,10 +42,6 @@ build-rust-debug:
 	cp libmovevm/target/debug/$(SHARED_LIB_SRC) api/$(SHARED_LIB_DST)
 	make update-bindings
 
-# use release build to actually ship - smaller and much faster
-#
-# See https://github.com/CosmWasm/wasmvm/issues/222#issuecomment-880616953 for two approaches to
-# enable stripping through cargo (if that is desired).
 build-rust-release:
 	(cd libmovevm && cargo build --release)
 	cp libmovevm/target/release/$(SHARED_LIB_SRC) api/$(SHARED_LIB_DST)
