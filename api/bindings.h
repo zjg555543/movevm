@@ -274,7 +274,7 @@ typedef struct GoQuerier {
 
 void say_publish(struct ByteSliceView module_code, struct ByteSliceView sender, struct Db db);
 
-void say_run(uint64_t gas_limit, struct Db db);
+void say_run(struct ByteSliceView scrpit_code, struct ByteSliceView sender, struct Db db);
 
 struct UnmanagedVector say_input_output(struct ByteSliceView code,
                                         struct Db db,

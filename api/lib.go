@@ -57,12 +57,20 @@ func ApiPublish(env []byte, info []byte, msg []byte, gasMeter *GasMeter, store K
 
 func ApiRun(env []byte, info []byte, msg []byte, gasMeter *GasMeter, store KVStore,
 	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) {
+
+	w := makeView(env)
+	defer runtime.KeepAlive(env)
+
+	i := makeView(info)
+	defer runtime.KeepAlive(info)
+
 	callID := startCall()
 	defer endCall(callID)
 
 	dbState := buildDBState(store, callID)
 	db := buildDB(&dbState, gasMeter)
-	C.say_run(cu64(gasLimit), db)
+
+	C.say_run(w, i, db)
 }
 
 const TESTING_GAS_LIMIT = uint64(500_000_000_000) // ~0.5ms

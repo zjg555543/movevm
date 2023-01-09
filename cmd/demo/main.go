@@ -51,7 +51,9 @@ func main() {
 
 	wasmvm.Publish(moduleBytes, sender2, testByte, gasMeter, store, nil, nil, 10000, false)
 
-	wasmvm.Run(testByte, testByte, testByte, gasMeter, store, nil, nil, 10000, false)
+	senderF := []byte("0xF")
+	scriptBytes := readModule("/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_scripts/test_script.mv")
+	wasmvm.Run(scriptBytes, senderF, testByte, gasMeter, store, nil, nil, 10000, false)
 
 	balance := types.Coins{types.NewCoin(250, "ATOM")}
 	querier := api.DefaultQuerier(api.MOCK_CONTRACT_ADDR, balance)

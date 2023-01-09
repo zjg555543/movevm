@@ -26,51 +26,18 @@ use move_vm_test_utils::gas_schedule::CostTable;
 use std::{fs, path::Path};
 
 pub fn run(
+    script_bytes_params: Vec<u8>,
     natives: impl IntoIterator<Item = NativeFunctionRecord>,
     cost_table: &CostTable,
     error_descriptions: &ErrorMapping,
     state: &mut OnDiskStateView,
-    package: &CompiledPackage,
-    script_path: &Path,
-    script_name_opt: &Option<String>,
     signers: &[String],
     txn_args: &[TransactionArgument],
     vm_type_args: Vec<TypeTag>,
     gas_budget: Option<u64>,
-    dry_run: bool,
     verbose: bool,
 ) -> Result<()> {
     println!("run---debug------1");
-    if !script_path.exists() {
-        println!("run---debug------2");
-        bail!("Script file {:?} does not exist", script_path)
-    };
-    let bytecode_version = get_bytecode_version_from_env();
-
-    let bytecode = if is_bytecode_file(script_path) {
-        println!("run---debug------3");
-//         assert!(
-//             state.is_module_path(script_path) || !contains_module(script_path),
-//             "Attempting to run module {:?} outside of the `storage/` directory.
-// move run` must be applied to a module inside `storage/`",
-//             script_path
-//         );
-        // script bytecode; read directly from file
-        fs::read(script_path)?
-    } else {
-        println!("run---debug------4");
-        // TODO(tzakian): support calling scripts in transitive deps
-        let file_contents = std::fs::read_to_string(script_path)?;
-        let script_opt = package
-            .scripts()
-            .find(|unit| unit.unit.source_map().check(&file_contents));
-        // script source file; package is already compiled so load it up
-        match script_opt {
-            Some(unit) => unit.unit.serialize(bytecode_version),
-            None => bail!("Unable to find script in file {:?}", script_path),
-        }
-    };
-
     let signer_addresses = signers
         .iter()
         .map(|s| AccountAddress::from_hex_literal(s))
@@ -84,7 +51,6 @@ pub fn run(
 
     let script_type_parameters = vec![];
     let script_parameters = vec![];
-    // TODO rethink move-cli arguments for executing functions
     let vm_args = signer_addresses
         .iter()
         .map(|a| {
@@ -95,30 +61,13 @@ pub fn run(
         .chain(vm_args)
         .collect();
     println!("run---debug------6");
-    let res = match script_name_opt {
-        Some(script_name) => {
-            println!("run---debug------7");
-            // script fun. parse module, extract script ID to pass to VM
-            let module = CompiledModule::deserialize(&bytecode)
-                .map_err(|e| anyhow!("Error deserializing module: {:?}", e))?;
-            session.execute_entry_function(
-                &module.self_id(),
-                IdentStr::new(script_name)?,
-                vm_type_args.clone(),
-                vm_args,
-                &mut gas_status,
-            )
-        }
-        None => {
-            println!("run---debug------8");
-            session.execute_script(
-                bytecode.to_vec(),
-                vm_type_args.clone(),
-                vm_args,
-                &mut gas_status,
-            )
-        }
-    };
+
+    let res = session.execute_script(
+        script_bytes_params.clone(),
+        vm_type_args.clone(),
+        vm_args,
+        &mut gas_status,
+    );
 
     if let Err(err) = res {
         println!("run---debug------9");
@@ -138,7 +87,7 @@ pub fn run(
         if verbose {
             explain_execution_effects(&changeset, &events, state)?
         }
-        maybe_commit_effects(!dry_run, changeset, events, state)
+        maybe_commit_effects(true, changeset, events, state)
     }
 }
 

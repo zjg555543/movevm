@@ -89,44 +89,51 @@ pub fn test_publish(module_code: ByteSliceView, sender: ByteSliceView, db: Db)->
 
 
 #[no_mangle]
-pub extern "C" fn say_run(gas_limit: u64, db: Db) {
+pub extern "C" fn say_run(scrpit_code: ByteSliceView, sender: ByteSliceView,  db: Db) {
     println!("--------------say run start-------------- ");
-    test_run(db);
+    test_run(scrpit_code,sender, db);
     println!("--------------say run end-------------- ");
 }
 
-pub fn test_run(db: Db)-> Result<()> {
+pub fn test_run(scrpit_code: ByteSliceView, sender: ByteSliceView, db: Db)-> Result<()> {
+    let scrpit_bytes_params = scrpit_code.to_owned().unwrap();
+    println!("scrpit_bytes_params len --- 1:{:?}", scrpit_bytes_params.len());
+    let temp_sender = sender.to_owned().unwrap();
+    let sender_params = std::str::from_utf8(&temp_sender).unwrap();
+
+
     let path = Some(PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme"));
     let storage_dir = PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme/storage/");
     let build_config = BuildConfig::default();
-    let script_file = Path::new("/Users/oker/workspace/move/movevm/contracts/readme/sources/test_script.move");
-    let context = PackageContext::new(&path, &build_config)?;
-    let mut state = context.prepare_state(&storage_dir, &storage_dir, db)?;
+    // let script_file = Path::new("/Users/oker/workspace/move/movevm/contracts/readme/sources/test_script.move");
+    // let context = PackageContext::new(&path, &build_config)?;
+    // let mut state = context.prepare_state(&storage_dir, &storage_dir, db)?;
+    let mut state= OnDiskStateView::create(build_config.install_dir
+                                               .as_ref()
+                                               .unwrap_or(&PathBuf::from(DEFAULT_BUILD_DIR))
+                                               .clone(), storage_dir, Box::new(GoStorage::new(db)))?;
     let cost_table = &move_vm_test_utils::gas_schedule::INITIAL_COST_SCHEDULE;
     let addr = AccountAddress::from_hex_literal("0x1").unwrap();
     let natives : Vec<NativeFunctionRecord> = all_natives(addr, GasParameters::zeros())
         .into_iter()
         .chain(nursery_natives(addr, NurseryGasParameters::zeros()))
         .collect();
-    let mut my_vec = Vec::new();
-    let name1 = String::from("0xf");
-    my_vec.push(name1);
+    let mut signers = Vec::new();
+    let name1 = String::from(sender_params);
+    signers.push(name1);
 
     let args :Vec<TransactionArgument> = Vec::new();
     let vm_type_args : Vec<TypeTag>  = Vec::new();
     run(
+        scrpit_bytes_params,
         natives,
         cost_table,
         &ErrorMapping::default(),
         &mut state,
-        context.package(),
-        &script_file,
-        &None,
-        &my_vec,
+        &signers,
         &args,
         vm_type_args,
         None,
-        false,
         true,
     );
     return Ok(());
