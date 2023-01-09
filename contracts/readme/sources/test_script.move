@@ -1,7 +1,7 @@
 // sources/test_script.move
 script {
-use 0x2::Test;
-fun test_script(account: signer) {
-    Test::publish(&account)
-}
+    use 0x3::Caller;
+    fun test_script(account: signer) {
+        Caller::publish(&account)
+    }
 }

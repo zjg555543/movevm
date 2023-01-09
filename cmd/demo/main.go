@@ -21,10 +21,6 @@ func main() {
 
 	wasmvm.Build(gasMeter, store)
 
-	moduleBytes := readModule("/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/Test.mv")
-
-	sender2 := []byte("0x2")
-
 	pathList := [...]string{
 		"/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/dependencies/MoveNursery/debug.mv",
 		"/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/dependencies/MoveStdlib/fixed_point32.mv",
@@ -47,15 +43,17 @@ func main() {
 		"/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/dependencies/MoveNursery/vault.mv",
 	}
 	for _, s := range pathList {
-		sender1 := []byte("0x1")
-		wasmvm.Publish(readModule(s), sender1, testByte, gasMeter, store, nil, nil, 10000, false)
+		wasmvm.Publish(readModule(s), []byte("0x1"), testByte, gasMeter, store, nil, nil, 10000, false)
 	}
 
-	wasmvm.Publish(moduleBytes, sender2, testByte, gasMeter, store, nil, nil, 10000, false)
+	moduleBytes2 := readModule("/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/Test.mv")
+	wasmvm.Publish(moduleBytes2, []byte("0x2"), testByte, gasMeter, store, nil, nil, 10000, false)
 
-	senderF := []byte("0xF")
+	moduleBytes3 := readModule("/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/Caller.mv")
+	wasmvm.Publish(moduleBytes3, []byte("0x3"), testByte, gasMeter, store, nil, nil, 10000, false)
+
 	scriptBytes := readModule("/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_scripts/test_script.mv")
-	wasmvm.Run(scriptBytes, senderF, testByte, gasMeter, store, nil, nil, 10000, false)
+	wasmvm.Run(scriptBytes, []byte("0xF"), testByte, gasMeter, store, nil, nil, 10000, false)
 
 	balance := types.Coins{types.NewCoin(250, "ATOM")}
 	querier := api.DefaultQuerier(api.MOCK_CONTRACT_ADDR, balance)
