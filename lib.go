@@ -1,4 +1,4 @@
-package cosmwasm
+package movevm
 
 import (
 	"github.com/zjg555543/movevm/api"

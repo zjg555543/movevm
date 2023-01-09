@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	movevm "github.com/zjg555543/movevm"
+	"github.com/zjg555543/movevm"
 	"github.com/zjg555543/movevm/api"
 	"github.com/zjg555543/movevm/types"
 	"io/ioutil"
