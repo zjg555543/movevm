@@ -19,17 +19,17 @@ typedef GoError (*canonicalize_address_fn)(api_t *ptr, U8SliceView src, Unmanage
 typedef GoError (*query_external_fn)(querier_t *ptr, uint64_t gas_limit, uint64_t *used_gas, U8SliceView request, UnmanagedVector *result, UnmanagedVector *errOut);
 
 // forward declarations (db)
-GoError cGet_cgo(db_t *ptr, gas_meter_t *gas_meter, uint64_t *used_gas, U8SliceView key, UnmanagedVector *val, UnmanagedVector *errOut);
-GoError cSet_cgo(db_t *ptr, gas_meter_t *gas_meter, uint64_t *used_gas, U8SliceView key, U8SliceView val, UnmanagedVector *errOut);
-GoError cDelete_cgo(db_t *ptr, gas_meter_t *gas_meter, uint64_t *used_gas, U8SliceView key, UnmanagedVector *errOut);
-GoError cScan_cgo(db_t *ptr, gas_meter_t *gas_meter, uint64_t *used_gas, U8SliceView start, U8SliceView end, int32_t order, GoIter *out, UnmanagedVector *errOut);
+GoError cMoveGet_cgo(db_t *ptr, gas_meter_t *gas_meter, uint64_t *used_gas, U8SliceView key, UnmanagedVector *val, UnmanagedVector *errOut);
+GoError cMoveSet_cgo(db_t *ptr, gas_meter_t *gas_meter, uint64_t *used_gas, U8SliceView key, U8SliceView val, UnmanagedVector *errOut);
+GoError cMoveDelete_cgo(db_t *ptr, gas_meter_t *gas_meter, uint64_t *used_gas, U8SliceView key, UnmanagedVector *errOut);
+GoError cMoveScan_cgo(db_t *ptr, gas_meter_t *gas_meter, uint64_t *used_gas, U8SliceView start, U8SliceView end, int32_t order, GoIter *out, UnmanagedVector *errOut);
 // iterator
-GoError cNext_cgo(iterator_t *ptr, gas_meter_t *gas_meter, uint64_t *used_gas, UnmanagedVector *key, UnmanagedVector *val, UnmanagedVector *errOut);
+GoError cMoveNext_cgo(iterator_t *ptr, gas_meter_t *gas_meter, uint64_t *used_gas, UnmanagedVector *key, UnmanagedVector *val, UnmanagedVector *errOut);
 // api
-GoError cHumanAddress_cgo(api_t *ptr, U8SliceView src, UnmanagedVector *dest, UnmanagedVector *errOut, uint64_t *used_gas);
-GoError cCanonicalAddress_cgo(api_t *ptr, U8SliceView src, UnmanagedVector *dest, UnmanagedVector *errOut, uint64_t *used_gas);
+GoError cMoveHumanAddress_cgo(api_t *ptr, U8SliceView src, UnmanagedVector *dest, UnmanagedVector *errOut, uint64_t *used_gas);
+GoError cMoveCanonicalAddress_cgo(api_t *ptr, U8SliceView src, UnmanagedVector *dest, UnmanagedVector *errOut, uint64_t *used_gas);
 // and querier
-GoError cQueryExternal_cgo(querier_t *ptr, uint64_t gas_limit, uint64_t *used_gas, U8SliceView request, UnmanagedVector *result, UnmanagedVector *errOut);
+GoError cMoveQueryExternal_cgo(querier_t *ptr, uint64_t gas_limit, uint64_t *used_gas, U8SliceView request, UnmanagedVector *result, UnmanagedVector *errOut);
 
 
 */
@@ -123,10 +123,10 @@ type KVStore interface {
 }
 
 var db_vtable = C.Db_vtable{
-	read_db:   (C.read_db_fn)(C.cGet_cgo),
-	write_db:  (C.write_db_fn)(C.cSet_cgo),
-	remove_db: (C.remove_db_fn)(C.cDelete_cgo),
-	scan_db:   (C.scan_db_fn)(C.cScan_cgo),
+	read_db:   (C.read_db_fn)(C.cMoveGet_cgo),
+	write_db:  (C.write_db_fn)(C.cMoveSet_cgo),
+	remove_db: (C.remove_db_fn)(C.cMoveDelete_cgo),
+	scan_db:   (C.scan_db_fn)(C.cMoveScan_cgo),
 }
 
 type DBState struct {
@@ -158,7 +158,7 @@ func buildDB(state *DBState, gm *GasMeter) C.Db {
 }
 
 var iterator_vtable = C.Iterator_vtable{
-	next_db: (C.next_db_fn)(C.cNext_cgo),
+	next_db: (C.next_db_fn)(C.cMoveNext_cgo),
 }
 
 // An iterator including referenced objects is 117 bytes large (calculated using https://github.com/DmitriyVTitov/size).
@@ -179,8 +179,8 @@ func buildIterator(callID uint64, it dbm.Iterator) (C.iterator_t, error) {
 	}, nil
 }
 
-//export cGet
-func cGet(ptr *C.db_t, gasMeter *C.gas_meter_t, usedGas *cu64, key C.U8SliceView, val *C.UnmanagedVector, errOut *C.UnmanagedVector) (ret C.GoError) {
+//export cMoveGet
+func cMoveGet(ptr *C.db_t, gasMeter *C.gas_meter_t, usedGas *cu64, key C.U8SliceView, val *C.UnmanagedVector, errOut *C.UnmanagedVector) (ret C.GoError) {
 	defer recoverPanic(&ret)
 
 	if ptr == nil || gasMeter == nil || usedGas == nil || val == nil || errOut == nil {
@@ -207,8 +207,8 @@ func cGet(ptr *C.db_t, gasMeter *C.gas_meter_t, usedGas *cu64, key C.U8SliceView
 	return C.GoError_None
 }
 
-//export cSet
-func cSet(ptr *C.db_t, gasMeter *C.gas_meter_t, usedGas *C.uint64_t, key C.U8SliceView, val C.U8SliceView, errOut *C.UnmanagedVector) (ret C.GoError) {
+//export cMoveSet
+func cMoveSet(ptr *C.db_t, gasMeter *C.gas_meter_t, usedGas *C.uint64_t, key C.U8SliceView, val C.U8SliceView, errOut *C.UnmanagedVector) (ret C.GoError) {
 	defer recoverPanic(&ret)
 
 	if ptr == nil || gasMeter == nil || usedGas == nil || errOut == nil {
@@ -232,8 +232,8 @@ func cSet(ptr *C.db_t, gasMeter *C.gas_meter_t, usedGas *C.uint64_t, key C.U8Sli
 	return C.GoError_None
 }
 
-//export cDelete
-func cDelete(ptr *C.db_t, gasMeter *C.gas_meter_t, usedGas *C.uint64_t, key C.U8SliceView, errOut *C.UnmanagedVector) (ret C.GoError) {
+//export cMoveDelete
+func cMoveDelete(ptr *C.db_t, gasMeter *C.gas_meter_t, usedGas *C.uint64_t, key C.U8SliceView, errOut *C.UnmanagedVector) (ret C.GoError) {
 	defer recoverPanic(&ret)
 
 	if ptr == nil || gasMeter == nil || usedGas == nil || errOut == nil {
@@ -256,8 +256,8 @@ func cDelete(ptr *C.db_t, gasMeter *C.gas_meter_t, usedGas *C.uint64_t, key C.U8
 	return C.GoError_None
 }
 
-//export cScan
-func cScan(ptr *C.db_t, gasMeter *C.gas_meter_t, usedGas *C.uint64_t, start C.U8SliceView, end C.U8SliceView, order ci32, out *C.GoIter, errOut *C.UnmanagedVector) (ret C.GoError) {
+//export cMoveScan
+func cMoveScan(ptr *C.db_t, gasMeter *C.gas_meter_t, usedGas *C.uint64_t, start C.U8SliceView, end C.U8SliceView, order ci32, out *C.GoIter, errOut *C.UnmanagedVector) (ret C.GoError) {
 	defer recoverPanic(&ret)
 
 	if ptr == nil || gasMeter == nil || usedGas == nil || out == nil || errOut == nil {
@@ -299,8 +299,8 @@ func cScan(ptr *C.db_t, gasMeter *C.gas_meter_t, usedGas *C.uint64_t, start C.U8
 	return C.GoError_None
 }
 
-//export cNext
-func cNext(ref C.iterator_t, gasMeter *C.gas_meter_t, usedGas *C.uint64_t, key *C.UnmanagedVector, val *C.UnmanagedVector, errOut *C.UnmanagedVector) (ret C.GoError) {
+//export cMoveNext
+func cMoveNext(ref C.iterator_t, gasMeter *C.gas_meter_t, usedGas *C.uint64_t, key *C.UnmanagedVector, val *C.UnmanagedVector, errOut *C.UnmanagedVector) (ret C.GoError) {
 	// typical usage of iterator
 	// 	for ; itr.Valid(); itr.Next() {
 	// 		k, v := itr.Key(); itr.Value()
@@ -353,8 +353,8 @@ type GoAPI struct {
 }
 
 var api_vtable = C.GoApi_vtable{
-	humanize_address:     (C.humanize_address_fn)(C.cHumanAddress_cgo),
-	canonicalize_address: (C.canonicalize_address_fn)(C.cCanonicalAddress_cgo),
+	humanize_address:     (C.humanize_address_fn)(C.cMoveHumanAddress_cgo),
+	canonicalize_address: (C.canonicalize_address_fn)(C.cMoveCanonicalAddress_cgo),
 }
 
 // contract: original pointer/struct referenced must live longer than C.GoApi struct
@@ -366,8 +366,8 @@ func buildAPI(api *GoAPI) C.GoApi {
 	}
 }
 
-//export cHumanAddress
-func cHumanAddress(ptr *C.api_t, src C.U8SliceView, dest *C.UnmanagedVector, errOut *C.UnmanagedVector, used_gas *cu64) (ret C.GoError) {
+//export cMoveHumanAddress
+func cMoveHumanAddress(ptr *C.api_t, src C.U8SliceView, dest *C.UnmanagedVector, errOut *C.UnmanagedVector, used_gas *cu64) (ret C.GoError) {
 	defer recoverPanic(&ret)
 
 	if dest == nil || errOut == nil {
@@ -394,8 +394,8 @@ func cHumanAddress(ptr *C.api_t, src C.U8SliceView, dest *C.UnmanagedVector, err
 	return C.GoError_None
 }
 
-//export cCanonicalAddress
-func cCanonicalAddress(ptr *C.api_t, src C.U8SliceView, dest *C.UnmanagedVector, errOut *C.UnmanagedVector, used_gas *cu64) (ret C.GoError) {
+//export cMoveCanonicalAddress
+func cMoveCanonicalAddress(ptr *C.api_t, src C.U8SliceView, dest *C.UnmanagedVector, errOut *C.UnmanagedVector, used_gas *cu64) (ret C.GoError) {
 	defer recoverPanic(&ret)
 
 	if dest == nil || errOut == nil {
@@ -424,7 +424,7 @@ func cCanonicalAddress(ptr *C.api_t, src C.U8SliceView, dest *C.UnmanagedVector,
 /****** Go Querier ********/
 
 var querier_vtable = C.Querier_vtable{
-	query_external: (C.query_external_fn)(C.cQueryExternal_cgo),
+	query_external: (C.query_external_fn)(C.cMoveQueryExternal_cgo),
 }
 
 // contract: original pointer/struct referenced must live longer than C.GoQuerier struct
@@ -436,8 +436,8 @@ func buildQuerier(q *Querier) C.GoQuerier {
 	}
 }
 
-//export cQueryExternal
-func cQueryExternal(ptr *C.querier_t, gasLimit C.uint64_t, usedGas *C.uint64_t, request C.U8SliceView, result *C.UnmanagedVector, errOut *C.UnmanagedVector) (ret C.GoError) {
+//export cMoveQueryExternal
+func cMoveQueryExternal(ptr *C.querier_t, gasLimit C.uint64_t, usedGas *C.uint64_t, request C.U8SliceView, result *C.UnmanagedVector, errOut *C.UnmanagedVector) (ret C.GoError) {
 	defer recoverPanic(&ret)
 
 	if ptr == nil || usedGas == nil || result == nil || errOut == nil {

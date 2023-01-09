@@ -5,7 +5,6 @@
 .idea
 .vscode
 vendor/*
-libmovevm.dylib
 
 # no static libraries (35MB+)
 /internal/api/lib*.a
