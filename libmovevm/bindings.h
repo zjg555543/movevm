@@ -54,31 +54,6 @@ enum GoError {
 typedef int32_t GoError;
 
 /**
- * An opaque type. `*gas_meter_t` represents a pointer to Go memory holding the gas meter.
- */
-typedef struct gas_meter_t {
-  uint8_t _private[0];
-} gas_meter_t;
-
-typedef struct db_t {
-  uint8_t _private[0];
-} db_t;
-
-/**
- * A view into a `Option<&[u8]>`, created and maintained by Rust.
- *
- * This can be copied into a []byte in Go.
- */
-typedef struct U8SliceView {
-  /**
-   * True if and only if this is None. If this is true, the other fields must be ignored.
-   */
-  bool is_none;
-  const uint8_t *ptr;
-  uintptr_t len;
-} U8SliceView;
-
-/**
  * An optional Vector type that requires explicit creation and destruction
  * and can be sent via FFI.
  * It can be created from `Option<Vec<u8>>` and be converted into `Option<Vec<u8>>`.
@@ -198,6 +173,31 @@ typedef struct UnmanagedVector {
   uintptr_t cap;
 } UnmanagedVector;
 
+/**
+ * An opaque type. `*gas_meter_t` represents a pointer to Go memory holding the gas meter.
+ */
+typedef struct gas_meter_t {
+  uint8_t _private[0];
+} gas_meter_t;
+
+typedef struct db_t {
+  uint8_t _private[0];
+} db_t;
+
+/**
+ * A view into a `Option<&[u8]>`, created and maintained by Rust.
+ *
+ * This can be copied into a []byte in Go.
+ */
+typedef struct U8SliceView {
+  /**
+   * True if and only if this is None. If this is true, the other fields must be ignored.
+   */
+  bool is_none;
+  const uint8_t *ptr;
+  uintptr_t len;
+} U8SliceView;
+
 typedef struct iterator_t {
   /**
    * An ID assigned to this contract call
@@ -272,6 +272,17 @@ typedef struct GoQuerier {
   struct Querier_vtable vtable;
 } GoQuerier;
 
+/**
+ * Returns a version number of this library as a C string.
+ *
+ * The string is owned by libmovevm and must not be mutated or destroyed by the caller.
+ */
+const char *version_str(void);
+
+struct UnmanagedVector new_unmanaged_vector(bool nil, const uint8_t *ptr, uintptr_t length);
+
+void destroy_unmanaged_vector(struct UnmanagedVector v);
+
 void say_build(struct Db db);
 
 void say_publish(struct ByteSliceView module_code, struct ByteSliceView sender, struct Db db);
@@ -283,14 +294,3 @@ struct UnmanagedVector say_input_output(struct ByteSliceView code,
                                         struct GoApi api,
                                         struct GoQuerier querier,
                                         struct UnmanagedVector *error_msg);
-
-/**
- * Returns a version number of this library as a C string.
- *
- * The string is owned by libmovevm and must not be mutated or destroyed by the caller.
- */
-const char *version_str(void);
-
-struct UnmanagedVector new_unmanaged_vector(bool nil, const uint8_t *ptr, uintptr_t length);
-
-void destroy_unmanaged_vector(struct UnmanagedVector v);
