@@ -135,6 +135,7 @@ pub fn test_run(scrpit_code: ByteSliceView, sender: ByteSliceView, db: Db)-> Res
     let addr = AccountAddress::from_hex_literal("0x1").unwrap();
     let natives : Vec<NativeFunctionRecord> = all_natives(addr, GasParameters::zeros())
         .into_iter()
+        .chain(natives::all_natives(addr, natives::GasParameters::zeros()))
         .chain(nursery_natives(addr, NurseryGasParameters::zeros()))
         .collect();
     let mut signers = Vec::new();

@@ -28,6 +28,7 @@ fn native_create_address(
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> PartialVMResult<NativeResult> {
+    println!("native_create_address--------------");
     debug_assert!(ty_args.is_empty());
     debug_assert!(arguments.len() == 1);
 
@@ -35,6 +36,7 @@ fn native_create_address(
 
     let bytes = pop_arg!(arguments, Vec<u8>);
     let address = AccountAddress::from_bytes(bytes);
+    println!("address-------{:?}", address);
     if let Ok(address) = address {
         Ok(NativeResult::ok(cost, smallvec![Value::address(address)]))
     } else {
@@ -72,6 +74,8 @@ fn native_create_signer(
     debug_assert!(arguments.len() == 1);
 
     let address = pop_arg!(arguments, AccountAddress);
+
+    println!("native_create_signer--------------address:{:?}", address);
     Ok(NativeResult::ok(
         gas_params.base,
         smallvec![Value::signer(address)],

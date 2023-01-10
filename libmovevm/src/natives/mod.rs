@@ -43,7 +43,7 @@ pub fn all_natives(
         };
     }
 
-    add_natives_from_module!("account", account::make_all(gas_params.account.clone()));
+    add_natives_from_module!("Account", account::make_all(gas_params.account.clone()));
 
     make_table_from_iter(framework_addr, natives)
 }

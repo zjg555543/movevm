@@ -41,6 +41,8 @@ func main() {
 		"/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/dependencies/MoveStdlib/string.mv",
 		"/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/dependencies/MoveStdlib/type_name.mv",
 		"/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/dependencies/MoveNursery/vault.mv",
+
+		"/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/Account.mv",
 	}
 	for _, s := range pathList {
 		movevm.Publish(readModule(s), []byte("0x1"), testByte, gasMeter, store, nil, nil, 10000, false)
