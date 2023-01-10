@@ -22,8 +22,9 @@ impl GasParameters {
     pub fn zeros() -> Self {
         Self {
             account: account::GasParameters {
-                create_address: account::CreateAddressGasParameters { base: 0.into() },
                 create_signer: account::CreateSignerGasParameters { base: 0.into() },
+                get_amount: account::GetAmountGasParameters { base: 0.into() },
+                transfer_amount: account::TransferAmountGasParameters { base: 0.into() },
             },
         }
     }

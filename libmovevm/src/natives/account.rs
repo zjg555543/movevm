@@ -1,6 +1,3 @@
-// Copyright (c) Aptos
-// SPDX-License-Identifier: Apache-2.0
-
 use move_binary_format::errors::PartialVMResult;
 use move_core_types::{account_address::AccountAddress, gas_algebra::InternalGas};
 use move_vm_runtime::native_functions::{NativeContext, NativeFunction};
@@ -11,56 +8,18 @@ use smallvec::smallvec;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-/***************************************************************************************************
- * native fun create_address
- *
- *   gas cost: base_cost
- *
- **************************************************************************************************/
 #[derive(Debug, Clone)]
-pub struct CreateAddressGasParameters {
+pub struct CreateSignerGasParameters {
     pub base: InternalGas,
 }
 
-fn native_create_address(
-    gas_params: &CreateAddressGasParameters,
-    _context: &mut NativeContext,
-    ty_args: Vec<Type>,
-    mut arguments: VecDeque<Value>,
-) -> PartialVMResult<NativeResult> {
-    println!("native_create_address--------------");
-    debug_assert!(ty_args.is_empty());
-    debug_assert!(arguments.len() == 1);
-
-    let cost = gas_params.base;
-
-    let bytes = pop_arg!(arguments, Vec<u8>);
-    let address = AccountAddress::from_bytes(bytes);
-    println!("address-------{:?}", address);
-    if let Ok(address) = address {
-        Ok(NativeResult::ok(cost, smallvec![Value::address(address)]))
-    } else {
-        Ok(NativeResult::err(
-            cost,
-            super::status::NFE_UNABLE_TO_PARSE_ADDRESS,
-        ))
-    }
-}
-
-pub fn make_native_create_address(gas_params: CreateAddressGasParameters) -> NativeFunction {
-    Arc::new(move |context, ty_args, args| {
-        native_create_address(&gas_params, context, ty_args, args)
-    })
-}
-
-/***************************************************************************************************
- * native fun create_signer
- *
- *   gas cost: base_cost
- *
- **************************************************************************************************/
 #[derive(Debug, Clone)]
-pub struct CreateSignerGasParameters {
+pub struct GetAmountGasParameters {
+    pub base: InternalGas,
+}
+
+#[derive(Debug, Clone)]
+pub struct TransferAmountGasParameters {
     pub base: InternalGas,
 }
 
@@ -82,32 +41,81 @@ fn native_create_signer(
     ))
 }
 
+fn native_get_amount(
+    gas_params: &GetAmountGasParameters,
+    _context: &mut NativeContext,
+    ty_args: Vec<Type>,
+    mut arguments: VecDeque<Value>,
+) -> PartialVMResult<NativeResult> {
+    debug_assert!(ty_args.is_empty());
+    debug_assert!(arguments.len() == 1);
+
+    let address = pop_arg!(arguments, AccountAddress);
+
+    println!("native_get_amount--------------address:{:?}", address);
+    Ok(NativeResult::ok(
+        gas_params.base,
+        smallvec![Value::u8(0)],
+    ))
+}
+
+fn native_transfer_amount(
+    gas_params: &TransferAmountGasParameters,
+    _context: &mut NativeContext,
+    ty_args: Vec<Type>,
+    mut arguments: VecDeque<Value>,
+) -> PartialVMResult<NativeResult> {
+    debug_assert!(ty_args.is_empty());
+    debug_assert!(arguments.len() == 2);
+
+    let address1 = pop_arg!(arguments, AccountAddress);
+    let address2 = pop_arg!(arguments, AccountAddress);
+
+    println!("native_transfer_amount--------------address1:{:?},address2:{:?}", address1, address2);
+    Ok(NativeResult::ok(
+        gas_params.base,
+        smallvec![Value::bool(true)],
+    ))
+}
+
 pub fn make_native_create_signer(gas_params: CreateSignerGasParameters) -> NativeFunction {
     Arc::new(move |context, ty_args, args| {
         native_create_signer(&gas_params, context, ty_args, args)
     })
 }
 
-/***************************************************************************************************
- * module
- *
- **************************************************************************************************/
-#[derive(Debug, Clone)]
-pub struct GasParameters {
-    pub create_address: CreateAddressGasParameters,
-    pub create_signer: CreateSignerGasParameters,
+pub fn make_native_get_amount(gas_params: GetAmountGasParameters) -> NativeFunction {
+    Arc::new(move |context, ty_args, args| {
+        native_get_amount(&gas_params, context, ty_args, args)
+    })
 }
 
+pub fn make_native_transfer_amount(gas_params: TransferAmountGasParameters) -> NativeFunction {
+    Arc::new(move |context, ty_args, args| {
+        native_transfer_amount(&gas_params, context, ty_args, args)
+    })
+}
+
+#[derive(Debug, Clone)]
+pub struct GasParameters {
+    pub create_signer: CreateSignerGasParameters,
+    pub get_amount: GetAmountGasParameters,
+    pub transfer_amount: TransferAmountGasParameters,
+}
 
 pub fn make_all(gas_params: GasParameters) -> impl Iterator<Item = (String, NativeFunction)> {
     let natives = [
         (
-            "create_address",
-            make_native_create_address(gas_params.create_address),
-        ),
-        (
             "create_signer",
             make_native_create_signer(gas_params.create_signer),
+        ),
+        (
+            "get_amount",
+            make_native_get_amount(gas_params.get_amount),
+        ),
+        (
+            "transfer_amount",
+            make_native_transfer_amount(gas_params.transfer_amount),
         ),
     ];
 
