@@ -9,6 +9,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define NFE_EXPECTED_STRUCT_TYPE_TAG 1
+
+#define NFE_UNABLE_TO_PARSE_ADDRESS 2
+
 enum ErrnoValue {
   ErrnoValue_Success = 0,
   ErrnoValue_Other = 1,

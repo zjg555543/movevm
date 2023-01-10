@@ -10,6 +10,7 @@ use crate::adapt::querier::GoQuerier;
 use crate::adapt::error::GoError;
 use crate::adapt::vm::types::{GasInfo, Storage};
 use crate::adapt::storage::GoStorage;
+use crate::natives;
 
 use cosmwasm_std::{
     coins, from_binary, to_vec, AllBalanceResponse, BankQuery, Empty, QueryRequest,Binary,
@@ -87,6 +88,7 @@ pub fn test_publish(module_code: ByteSliceView, sender: ByteSliceView, db: Db)->
     println!("--------------test_publish-------------- 2 ");
     let natives : Vec<NativeFunctionRecord> = all_natives(addr, GasParameters::zeros())
         .into_iter()
+        .chain(natives::all_natives(addr, natives::GasParameters::zeros()))
         .chain(nursery_natives(addr, NurseryGasParameters::zeros()))
         .collect();
 

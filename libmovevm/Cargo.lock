@@ -2443,6 +2443,7 @@ dependencies = [
  "serde 1.0.152",
  "serde_json",
  "serde_yaml",
+ "smallvec",
  "tempfile",
  "thiserror",
  "toml_edit",
