@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use crate::adapt::db::Db;
 
-use cosmwasm_std::{Order, Record};
 use crate::adapt::vm::types::{BackendError, BackendResult, GasInfo, Storage};
 
 use crate::adapt::error::GoError;
@@ -89,8 +88,8 @@ impl Storage for GoStorage {
     //         )
     //     };
     //     unsafe {
-    //         if let Err(err) = go_error.into_result(error_msg, default) {
-    //             return (Err(err), gas_info);
+    //         if let Err(errors) = go_error.into_result(error_msg, default) {
+    //             return (Err(errors), gas_info);
     //         }
     //     }
     //

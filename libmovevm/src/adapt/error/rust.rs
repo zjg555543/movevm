@@ -102,14 +102,14 @@ impl RustError {
 //     }
 // }
 //
-// impl From<std::str::Utf8Error> for RustError {
-//     fn from(source: std::str::Utf8Error) -> Self {
+// impl From<stdvm::str::Utf8Error> for RustError {
+//     fn from(source: stdvm::str::Utf8Error) -> Self {
 //         RustError::invalid_utf8(source)
 //     }
 // }
 //
-// impl From<std::string::FromUtf8Error> for RustError {
-//     fn from(source: std::string::FromUtf8Error) -> Self {
+// impl From<stdvm::string::FromUtf8Error> for RustError {
+//     fn from(source: stdvm::string::FromUtf8Error) -> Self {
 //         RustError::invalid_utf8(source)
 //     }
 // }
@@ -220,7 +220,7 @@ where
 //     use super::*;
 //     use cosmwasm_vm::{BackendError, Checksum};
 //     use errno::errno;
-//     use std::str;
+//     use stdvm::str;
 //
 //     #[test]
 //     fn empty_arg_works() {

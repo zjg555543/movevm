@@ -1,4 +1,6 @@
-use cosmwasm_std::{Binary, ContractResult, SystemError, SystemResult};
+// use cosmwasm_std::{Binary, ContractResult, SystemError, SystemResult};
+
+use crate::stdvm::{binary::Binary, result::contract_result::ContractResult, errors::system_error::SystemError, result::system_result::SystemResult};
 use crate::adapt::vm::types::{BackendResult, GasInfo, Querier};
 
 

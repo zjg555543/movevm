@@ -341,6 +341,16 @@ func (q BankQuerier) Query(request *types.BankQuery) ([]byte, error) {
 		}
 		return json.Marshal(resp)
 	}
+
+	if request.TransCoin != nil {
+		denom := request.TransCoin.Denom
+		coin := types.NewCoin(0, denom)
+		resp := types.TransCoinResponse{
+			Amount: coin,
+		}
+		return json.Marshal(resp)
+	}
+
 	if request.AllBalances != nil {
 		coins := q.Balances[request.AllBalances.Address]
 		resp := types.AllBalancesResponse{

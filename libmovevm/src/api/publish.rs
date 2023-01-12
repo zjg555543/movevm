@@ -36,7 +36,7 @@ pub fn publish(
 
     let res = session.publish_module(module_bytes_params.clone(), sender, &mut gas_status);
     if let Err(err) = res {
-        //explain_publish_error(err, state, unit)?;
+        //explain_publish_error(errors, state, unit)?;
         has_error = true;
     }
 

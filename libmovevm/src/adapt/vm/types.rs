@@ -9,7 +9,7 @@ use std::ops::Deref;
 use serde::{de, ser, Deserialize, Deserializer, Serialize};
 
 
-use cosmwasm_std::{Binary, ContractResult, SystemResult};
+use crate::stdvm::{binary::Binary, result::contract_result::ContractResult, errors::system_error::SystemError, result::system_result::SystemResult};
 
 pub type Record<V = Vec<u8>> = (Vec<u8>, V);
 

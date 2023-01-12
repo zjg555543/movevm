@@ -317,7 +317,7 @@ pub(crate) fn explain_type_error(
 // ) -> Result<()> {
 //     use StatusCode::*;
 //     let mut files = HashMap::new();
-//     let file_contents = std::fs::read_to_string(&unit.source_path)?;
+//     let file_contents = stdvm::fs::read_to_string(&unit.source_path)?;
 //     let file_hash = FileHash::new(&file_contents);
 //     files.insert(
 //         file_hash,
