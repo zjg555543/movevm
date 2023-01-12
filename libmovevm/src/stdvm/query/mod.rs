@@ -12,7 +12,7 @@ mod wasm;
 
 #[cfg(feature = "cosmwasm_1_1")]
 pub use bank::SupplyResponse;
-pub use bank::{AllBalanceResponse, BalanceResponse, BankQuery};
+pub use bank::{AllBalanceResponse, BalanceResponse, BankQuery, TransCoinResponse};
 #[cfg(feature = "stargate")]
 pub use ibc::{ChannelResponse, IbcQuery, ListChannelsResponse, PortIdResponse};
 #[cfg(feature = "staking")]

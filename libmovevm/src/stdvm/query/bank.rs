@@ -19,6 +19,8 @@ pub enum BankQuery {
     /// Note that this may be much more expensive than Balance and should be avoided if possible.
     /// Return value is AllBalanceResponse.
     AllBalances { address: String },
+
+    Transfer { from: String, to: String, amount: Coin },
 }
 
 #[cfg(feature = "cosmwasm_1_1")]
@@ -34,6 +36,14 @@ pub struct SupplyResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct BalanceResponse {
+    /// Always returns a Coin with the requested denom.
+    /// This may be of 0 amount if no such funds.
+    pub amount: Coin,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct TransCoinResponse {
     /// Always returns a Coin with the requested denom.
     /// This may be of 0 amount if no such funds.
     pub amount: Coin,

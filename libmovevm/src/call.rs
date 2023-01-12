@@ -19,11 +19,6 @@ use crate::stdvm::result::empty::Empty;
 use crate::stdvm::serde::to_vec;
 use crate::stdvm::serde::from_binary;
 
-// use cosmwasm_std::{
-//     from_binary, to_vec, AllBalanceResponse, BankQuery, Empty, QueryRequest,Binary,
-//     ContractResult, SystemError, SystemResult,coin, BalanceResponse,
-// };
-
 use crate::stdvm::query::{BankQuery, AllBalanceResponse, QueryRequest, BalanceResponse};
 use crate::stdvm::{binary::Binary, result::contract_result::ContractResult, errors::system_error::SystemError, result::system_result::SystemResult};
 

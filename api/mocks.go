@@ -342,11 +342,9 @@ func (q BankQuerier) Query(request *types.BankQuery) ([]byte, error) {
 		return json.Marshal(resp)
 	}
 
-	if request.TransCoin != nil {
-		denom := request.TransCoin.Denom
-		coin := types.NewCoin(0, denom)
+	if request.Transfer != nil {
 		resp := types.TransCoinResponse{
-			Amount: coin,
+			Amount: request.Transfer.Amount,
 		}
 		return json.Marshal(resp)
 	}

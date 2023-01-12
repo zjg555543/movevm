@@ -90,7 +90,7 @@ type QueryRequest struct {
 type BankQuery struct {
 	Balance     *BalanceQuery     `json:"balance,omitempty"`
 	AllBalances *AllBalancesQuery `json:"all_balances,omitempty"`
-	TransCoin   *TransCoinSend    `json:"trans_oin,omitempty"`
+	Transfer    *TransferQuery    `json:"transfer,omitempty"`
 }
 
 type BalanceQuery struct {
@@ -98,11 +98,10 @@ type BalanceQuery struct {
 	Denom   string `json:"denom"`
 }
 
-type TransCoinSend struct {
+type TransferQuery struct {
 	From   string `json:"from"`
 	To     string `json:"to"`
-	Denom  string `json:"denom"`
-	Amount int64  `json:"amount"`
+	Amount Coin   `json:"amount"`
 }
 
 // TransCoinResponse is the expected response to TransCoinSend

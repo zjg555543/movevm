@@ -10,8 +10,9 @@ use std::sync::Arc;
 use crate::adapt::vm::types::{GasInfo, Storage, Querier};
 use crate::adapt::memory::{U8SliceView, ByteSliceView, UnmanagedVector};
 use std::sync::Mutex;
+use crate::stdvm::coin::Coin;
 
-use crate::stdvm::query::{BankQuery, AllBalanceResponse, QueryRequest, BalanceResponse};
+use crate::stdvm::query::{BankQuery, AllBalanceResponse, QueryRequest, BalanceResponse, TransCoinResponse};
 use crate::stdvm::{binary::Binary, result::contract_result::ContractResult, errors::system_error::SystemError, result::system_result::SystemResult};
 use crate::stdvm::result::empty::Empty;
 
@@ -63,11 +64,6 @@ fn native_get_amount(
 
     let address = pop_arg!(arguments, AccountAddress);
 
-
-    // for query test
-    let mut output = UnmanagedVector::default();
-    let mut error_msg = UnmanagedVector::default();
-    let mut used_gas = 0_u64;
     const INIT_ADDR: &str = "contract";
     let req: QueryRequest<Empty> = QueryRequest::Bank(BankQuery::AllBalances {
         address: INIT_ADDR.to_string(),
@@ -93,16 +89,38 @@ fn native_get_amount(
 }
 
 fn native_transfer_amount(
+    querier: Arc<Mutex<Box<dyn Querier + Send +'static>>>,
     gas_params: &TransferAmountGasParameters,
     _context: &mut NativeContext,
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> PartialVMResult<NativeResult> {
     debug_assert!(ty_args.is_empty());
-    debug_assert!(arguments.len() == 2);
+    debug_assert!(arguments.len() == 3);
 
+    let amount = pop_arg!(arguments, u128);
     let address1 = pop_arg!(arguments, AccountAddress);
     let address2 = pop_arg!(arguments, AccountAddress);
+
+
+    let coin = Coin::new(amount, String::from("ucosm"));
+    let req: QueryRequest<Empty> = QueryRequest::Bank(BankQuery::Transfer {
+        from: address2.to_string(),
+        to: address1.to_string(),
+        amount: coin,
+    });
+
+    println!("native_transfer_amount----------{:?} ",req);
+
+    let request = &to_vec(&req).unwrap();
+    const DEFAULT_QUERY_GAS_LIMIT: u64 = 300_000;
+    let gas_limit = DEFAULT_QUERY_GAS_LIMIT;
+
+    println!("native_transfer_amount----------start ");
+    let newResult = querier.lock().unwrap().query_raw(request, gas_limit);
+    let bin_data :Binary = newResult.0.unwrap().unwrap().unwrap();
+    let TransCoinResponse { amount } = from_binary(&bin_data).unwrap();
+    println!("native_transfer_amount----------amount {:?}", amount);
 
     println!("native_transfer_amount--------------address1:{:?},address2:{:?}", address1, address2);
     Ok(NativeResult::ok(
@@ -123,9 +141,9 @@ pub fn make_native_get_amount(querier: Arc<Mutex<Box<dyn Querier + Send +'static
     })
 }
 
-pub fn make_native_transfer_amount(gas_params: TransferAmountGasParameters) -> NativeFunction {
+pub fn make_native_transfer_amount(querier: Arc<Mutex<Box<dyn Querier + Send +'static>>>, gas_params: TransferAmountGasParameters) -> NativeFunction {
     Arc::new(move |context, ty_args, args| {
-        native_transfer_amount(&gas_params, context, ty_args, args)
+        native_transfer_amount(querier.clone(), &gas_params, context, ty_args, args)
     })
 }
 
@@ -144,11 +162,11 @@ pub fn make_all(querier: Arc<Mutex<Box<dyn Querier + Send +'static>>>, gas_param
         ),
         (
             "get_amount",
-            make_native_get_amount(querier, gas_params.get_amount),
+            make_native_get_amount(querier.clone(), gas_params.get_amount),
         ),
         (
             "transfer_amount",
-            make_native_transfer_amount(gas_params.transfer_amount),
+            make_native_transfer_amount(querier.clone(), gas_params.transfer_amount),
         ),
     ];
 
