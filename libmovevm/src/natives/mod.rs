@@ -23,7 +23,7 @@ impl GasParameters {
         Self {
             account: account::GasParameters {
                 create_signer: account::CreateSignerGasParameters { base: 0.into() },
-                get_amount: account::GetAmountGasParameters { base: 0.into() },
+                get_amount: account::GetAmountGasParameters { base: 0.into(), api: 0 },
                 transfer_amount: account::TransferAmountGasParameters { base: 0.into() },
             },
         }

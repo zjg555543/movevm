@@ -24,17 +24,17 @@ func Build(gasMeter GasMeter, store KVStore) {
 	api.ApiBuild(&gasMeter, store)
 }
 
-func Publish(env []byte, info []byte, msg []byte, gasMeter GasMeter, store KVStore,
+func Publish(codeByte []byte, info []byte, msg []byte, gasMeter GasMeter, store KVStore,
 	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) {
-	api.ApiPublish(env, info, msg, &gasMeter, store, goApi, querier, gasLimit, printDebug)
+	api.ApiPublish(codeByte, info, msg, &gasMeter, store, goApi, querier, gasLimit, printDebug)
 }
 
-func Run(env []byte, info []byte, msg []byte, gasMeter GasMeter, store KVStore,
+func Run(codeByte []byte, info []byte, msg []byte, gasMeter GasMeter, store KVStore,
 	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) {
-	api.ApiRun(env, info, msg, &gasMeter, store, goApi, querier, gasLimit, printDebug)
+	api.ApiRun(codeByte, info, msg, &gasMeter, store, goApi, querier, gasLimit, printDebug)
 }
 
-func InputOutput(env []byte, info []byte, msg []byte, gasMeter GasMeter, store KVStore,
+func InputOutput(codeByte []byte, info []byte, msg []byte, gasMeter GasMeter, store KVStore,
 	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) ([]byte, error) {
-	return api.ApiInputOutput(env, info, msg, &gasMeter, store, goApi, querier, gasLimit, printDebug)
+	return api.ApiInputOutput(codeByte, info, msg, &gasMeter, store, goApi, querier, gasLimit, printDebug)
 }

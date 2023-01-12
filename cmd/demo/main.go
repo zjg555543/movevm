@@ -54,12 +54,13 @@ func main() {
 	moduleBytes3 := readModule("/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_modules/Caller.mv")
 	movevm.Publish(moduleBytes3, []byte("0x3"), testByte, gasMeter, store, nil, nil, 10000, false)
 
-	scriptBytes := readModule("/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_scripts/test_script.mv")
-	movevm.Run(scriptBytes, []byte("0xF"), testByte, gasMeter, store, nil, nil, 10000, false)
-
 	balance := types.Coins{types.NewCoin(250, "ATOM")}
 	querier := api.DefaultQuerier(api.MOCK_CONTRACT_ADDR, balance)
-	result, err := movevm.InputOutput(testByte, testByte, testByte, gasMeter, store, nil, &querier, 10000, false)
+	scriptBytes := readModule("/Users/oker/workspace/move/movevm/contracts/readme/build/readme/bytecode_scripts/test_script.mv")
+	movevm.Run(scriptBytes, []byte("0xF"), testByte, gasMeter, store, nil, &querier, 10000, false)
+
+	api := api.NewMockAPI()
+	result, err := movevm.InputOutput(testByte, testByte, testByte, gasMeter, store, api, &querier, 10000, false)
 	if err != nil {
 		fmt.Println(err)
 	} else {

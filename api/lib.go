@@ -64,22 +64,24 @@ func ApiPublish(env []byte, info []byte, msg []byte, gasMeter *GasMeter, store K
 	C.say_publish(w, i, db)
 }
 
-func ApiRun(env []byte, info []byte, msg []byte, gasMeter *GasMeter, store KVStore,
+func ApiRun(codeByte []byte, info []byte, msg []byte, gasMeter *GasMeter, store KVStore,
 	goApi *GoAPI, querier *Querier, gasLimit uint64, printDebug bool) {
 
-	w := makeView(env)
-	defer runtime.KeepAlive(env)
+	cCodeByte := makeView(codeByte)
+	defer runtime.KeepAlive(codeByte)
 
-	i := makeView(info)
+	cInfo := makeView(info)
 	defer runtime.KeepAlive(info)
 
 	callID := startCall()
 	defer endCall(callID)
 
 	dbState := buildDBState(store, callID)
-	db := buildDB(&dbState, gasMeter)
+	cDb := buildDB(&dbState, gasMeter)
+	cApi := buildAPI(goApi)
+	cQuerier := buildQuerier(querier)
 
-	C.say_run(w, i, db)
+	C.say_run(cCodeByte, cInfo, cDb, cApi, cQuerier)
 }
 
 const TESTING_GAS_LIMIT = uint64(500_000_000_000) // ~0.5ms
@@ -90,17 +92,17 @@ func ApiInputOutput(env []byte, info []byte, msg []byte, gasMeter *GasMeter, sto
 	defer runtime.KeepAlive(env)
 	errmsg := newUnmanagedVector(nil)
 
-	api := NewMockAPI()
+	//api := NewMockAPI()
 
 	callID := startCall()
 	defer endCall(callID)
 
 	dbState := buildDBState(store, callID)
-	db := buildDB(&dbState, gasMeter)
-	a := buildAPI(api)
-	q := buildQuerier(querier)
+	cDb := buildDB(&dbState, gasMeter)
+	cApi := buildAPI(goApi)
+	cQuerier := buildQuerier(querier)
 
-	result, err := C.say_input_output(w, db, a, q, &errmsg)
+	result, err := C.say_input_output(w, cDb, cApi, cQuerier, &errmsg)
 	if err != nil {
 		return nil, errorWithMessage(err, errmsg)
 	}

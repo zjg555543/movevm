@@ -16,6 +16,7 @@ pub struct CreateSignerGasParameters {
 #[derive(Debug, Clone)]
 pub struct GetAmountGasParameters {
     pub base: InternalGas,
+    pub api: u64,
 }
 
 #[derive(Debug, Clone)]

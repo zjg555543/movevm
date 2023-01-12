@@ -8,7 +8,7 @@ use crate::adapt::error::{handle_c_error_binary, handle_c_error_default, handle_
 use crate::adapt::args::{AVAILABLE_CAPABILITIES_ARG, CACHE_ARG, CHECKSUM_ARG, DATA_DIR_ARG, WASM_ARG};
 use crate::adapt::querier::GoQuerier;
 use crate::adapt::error::GoError;
-use crate::adapt::vm::types::{GasInfo, Storage};
+use crate::adapt::vm::types::{GasInfo, Storage, Querier};
 use crate::adapt::storage::GoStorage;
 use crate::natives;
 
@@ -108,7 +108,10 @@ pub fn test_publish(module_code: ByteSliceView, sender: ByteSliceView, db: Db)->
 
 
 #[no_mangle]
-pub extern "C" fn say_run(scrpit_code: ByteSliceView, sender: ByteSliceView,  db: Db) {
+pub extern "C" fn say_run(scrpit_code: ByteSliceView, sender: ByteSliceView,
+                          db: Db,
+                          api: GoApi,
+                          querier: GoQuerier) {
     println!("--------------say run start-------------- ");
     test_run(scrpit_code,sender, db);
     println!("--------------say run end-------------- ");
@@ -181,33 +184,29 @@ pub extern "C" fn say_input_output(code: ByteSliceView,
     });
 
     let request = &to_vec(&req).unwrap();
-
     const DEFAULT_QUERY_GAS_LIMIT: u64 = 300_000;
     let gas_limit = DEFAULT_QUERY_GAS_LIMIT;
 
-    let go_result: GoError = (querier.vtable.query_external)(
-        querier.state,
-        gas_limit,
-        &mut used_gas as *mut u64,
-        U8SliceView::new(Some(request)),
-        &mut output as *mut UnmanagedVector,
-        &mut error_msg as *mut UnmanagedVector,
-    ).into();
+    // let go_result: GoError = (querier.vtable.query_external)(
+    //     querier.state,
+    //     gas_limit,
+    //     &mut used_gas as *mut u64,
+    //     U8SliceView::new(Some(request)),
+    //     &mut output as *mut UnmanagedVector,
+    //     &mut error_msg as *mut UnmanagedVector,
+    // ).into();
 
-    let gas_info = GasInfo::with_externally_used(used_gas);
-    println!("gas use{:?}", used_gas);
-    let output = output.consume();
+    // let gas_info = GasInfo::with_externally_used(used_gas);
+    // println!("gas use{:?}", used_gas);
+    // let output = output.consume();
 
-    let bin_result: Vec<u8> = output.unwrap_or_default();
-    let result :Result<SystemResult<ContractResult<Binary>>> = serde_json::from_slice(&bin_result).or_else(|e| {
-        Ok(SystemResult::Err(SystemError::InvalidResponse {
-            error: format!("Parsing Go response: {}", e),
-            response: bin_result.into(),
-        }))
-    });
-    let bin_data :Binary = result.unwrap().unwrap().unwrap();
+    println!("querierInface----------start ");
+    let querierInface: Box<dyn Querier> = Box::new(querier);
+    let newResult = querierInface.query_raw(request, gas_limit);
+    let bin_data :Binary = newResult.0.unwrap().unwrap().unwrap();
     let AllBalanceResponse { amount } = from_binary(&bin_data).unwrap();
-    println!("result{:?}", amount);
+    println!("querierInface----------amount {:?}", amount);
+
 
     test_db(db);
 

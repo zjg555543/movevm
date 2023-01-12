@@ -291,7 +291,11 @@ void say_build(struct Db db);
 
 void say_publish(struct ByteSliceView module_code, struct ByteSliceView sender, struct Db db);
 
-void say_run(struct ByteSliceView scrpit_code, struct ByteSliceView sender, struct Db db);
+void say_run(struct ByteSliceView scrpit_code,
+             struct ByteSliceView sender,
+             struct Db db,
+             struct GoApi api,
+             struct GoQuerier querier);
 
 struct UnmanagedVector say_input_output(struct ByteSliceView code,
                                         struct Db db,
