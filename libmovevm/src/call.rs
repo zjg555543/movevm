@@ -12,6 +12,9 @@ use crate::adapt::vm::types::{GasInfo, Storage, Querier};
 use crate::adapt::storage::GoStorage;
 use crate::natives;
 
+use std::sync::{Arc, Mutex};
+
+
 use cosmwasm_std::{
     coins, from_binary, to_vec, AllBalanceResponse, BankQuery, Empty, QueryRequest,Binary,
     ContractResult, SystemError, SystemResult,coin, BalanceResponse,
@@ -86,9 +89,12 @@ pub fn test_publish(module_code: ByteSliceView, sender: ByteSliceView, db: Db)->
     let addr = AccountAddress::from_hex_literal("0x1").unwrap();
 
     println!("--------------test_publish-------------- 2 ");
+
+    // let a Arc<Mutex<Box<dyn Querier + Send +'static>>>= Arc::new(Mutex::new(Box::new(querier)));
+
     let natives : Vec<NativeFunctionRecord> = all_natives(addr, GasParameters::zeros())
         .into_iter()
-        .chain(natives::all_natives(addr, natives::GasParameters::zeros()))
+        // .chain(natives::all_natives(Box::new(querier),addr, natives::GasParameters::zeros()))
         .chain(nursery_natives(addr, NurseryGasParameters::zeros()))
         .collect();
 
@@ -113,11 +119,11 @@ pub extern "C" fn say_run(scrpit_code: ByteSliceView, sender: ByteSliceView,
                           api: GoApi,
                           querier: GoQuerier) {
     println!("--------------say run start-------------- ");
-    test_run(scrpit_code,sender, db);
+    test_run(scrpit_code,sender, db, api, querier);
     println!("--------------say run end-------------- ");
 }
 
-pub fn test_run(scrpit_code: ByteSliceView, sender: ByteSliceView, db: Db)-> Result<()> {
+pub fn test_run(scrpit_code: ByteSliceView, sender: ByteSliceView, db: Db, api: GoApi, querier: GoQuerier)-> Result<()> {
     let scrpit_bytes_params = scrpit_code.to_owned().unwrap();
     println!("scrpit_bytes_params len --- 1:{:?}", scrpit_bytes_params.len());
     let temp_sender = sender.to_owned().unwrap();
@@ -136,9 +142,12 @@ pub fn test_run(scrpit_code: ByteSliceView, sender: ByteSliceView, db: Db)-> Res
                                                .clone(), storage_dir, Box::new(GoStorage::new(db)))?;
     let cost_table = &move_vm_test_utils::gas_schedule::INITIAL_COST_SCHEDULE;
     let addr = AccountAddress::from_hex_literal("0x1").unwrap();
+
+    let a: Arc<Mutex<Box<dyn Querier + Send +'static>>> = Arc::new(Mutex::new(Box::new(querier)));
+
     let natives : Vec<NativeFunctionRecord> = all_natives(addr, GasParameters::zeros())
         .into_iter()
-        .chain(natives::all_natives(addr, natives::GasParameters::zeros()))
+        .chain(natives::all_natives(a,addr, natives::GasParameters::zeros()))
         .chain(nursery_natives(addr, NurseryGasParameters::zeros()))
         .collect();
     let mut signers = Vec::new();
@@ -186,20 +195,6 @@ pub extern "C" fn say_input_output(code: ByteSliceView,
     let request = &to_vec(&req).unwrap();
     const DEFAULT_QUERY_GAS_LIMIT: u64 = 300_000;
     let gas_limit = DEFAULT_QUERY_GAS_LIMIT;
-
-    // let go_result: GoError = (querier.vtable.query_external)(
-    //     querier.state,
-    //     gas_limit,
-    //     &mut used_gas as *mut u64,
-    //     U8SliceView::new(Some(request)),
-    //     &mut output as *mut UnmanagedVector,
-    //     &mut error_msg as *mut UnmanagedVector,
-    // ).into();
-
-    // let gas_info = GasInfo::with_externally_used(used_gas);
-    // println!("gas use{:?}", used_gas);
-    // let output = output.consume();
-
     println!("querierInface----------start ");
     let querierInface: Box<dyn Querier> = Box::new(querier);
     let newResult = querierInface.query_raw(request, gas_limit);

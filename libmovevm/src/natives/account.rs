@@ -7,6 +7,15 @@ use move_vm_types::{
 use smallvec::smallvec;
 use std::collections::VecDeque;
 use std::sync::Arc;
+use crate::adapt::vm::types::{GasInfo, Storage, Querier};
+use crate::adapt::memory::{U8SliceView, ByteSliceView, UnmanagedVector};
+use std::sync::Mutex;
+
+use cosmwasm_std::{
+    coins, from_binary, to_vec, AllBalanceResponse, BankQuery, Empty, QueryRequest,Binary,
+    ContractResult, SystemError, SystemResult,coin, BalanceResponse,
+};
+
 
 #[derive(Debug, Clone)]
 pub struct CreateSignerGasParameters {
@@ -16,7 +25,6 @@ pub struct CreateSignerGasParameters {
 #[derive(Debug, Clone)]
 pub struct GetAmountGasParameters {
     pub base: InternalGas,
-    pub api: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -43,6 +51,7 @@ fn native_create_signer(
 }
 
 fn native_get_amount(
+    querier: Arc<Mutex<Box<dyn Querier + Send +'static>>>,
     gas_params: &GetAmountGasParameters,
     _context: &mut NativeContext,
     ty_args: Vec<Type>,
@@ -53,7 +62,29 @@ fn native_get_amount(
 
     let address = pop_arg!(arguments, AccountAddress);
 
-    println!("native_get_amount--------------address:{:?}", address);
+
+    // for query test
+    let mut output = UnmanagedVector::default();
+    let mut error_msg = UnmanagedVector::default();
+    let mut used_gas = 0_u64;
+    const INIT_ADDR: &str = "contract";
+    let req: QueryRequest<Empty> = QueryRequest::Bank(BankQuery::AllBalances {
+        address: INIT_ADDR.to_string(),
+    });
+
+    let request = &to_vec(&req).unwrap();
+    const DEFAULT_QUERY_GAS_LIMIT: u64 = 300_000;
+    let gas_limit = DEFAULT_QUERY_GAS_LIMIT;
+
+    println!("native_get_amount----------start ");
+    // let querierInface: Box<dyn Querier> = Box::new(querier);
+    let newResult = querier.lock().unwrap().query_raw(request, gas_limit);
+    let bin_data :Binary = newResult.0.unwrap().unwrap().unwrap();
+    let AllBalanceResponse { amount } = from_binary(&bin_data).unwrap();
+    println!("native_get_amount----------amount {:?}", amount);
+
+
+    println!("native_get_amount--------------address:{:?}----test data", address);
     Ok(NativeResult::ok(
         gas_params.base,
         smallvec![Value::u8(0)],
@@ -85,9 +116,9 @@ pub fn make_native_create_signer(gas_params: CreateSignerGasParameters) -> Nativ
     })
 }
 
-pub fn make_native_get_amount(gas_params: GetAmountGasParameters) -> NativeFunction {
+pub fn make_native_get_amount(querier: Arc<Mutex<Box<dyn Querier + Send +'static>>>, gas_params: GetAmountGasParameters) -> NativeFunction {
     Arc::new(move |context, ty_args, args| {
-        native_get_amount(&gas_params, context, ty_args, args)
+        native_get_amount(querier.clone(),&gas_params, context, ty_args, args)
     })
 }
 
@@ -104,7 +135,7 @@ pub struct GasParameters {
     pub transfer_amount: TransferAmountGasParameters,
 }
 
-pub fn make_all(gas_params: GasParameters) -> impl Iterator<Item = (String, NativeFunction)> {
+pub fn make_all(querier: Arc<Mutex<Box<dyn Querier + Send +'static>>>, gas_params: GasParameters) -> impl Iterator<Item = (String, NativeFunction)> {
     let natives = [
         (
             "create_signer",
@@ -112,7 +143,7 @@ pub fn make_all(gas_params: GasParameters) -> impl Iterator<Item = (String, Nati
         ),
         (
             "get_amount",
-            make_native_get_amount(gas_params.get_amount),
+            make_native_get_amount(querier, gas_params.get_amount),
         ),
         (
             "transfer_amount",

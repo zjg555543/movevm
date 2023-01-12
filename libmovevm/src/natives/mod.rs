@@ -5,6 +5,11 @@ use move_core_types::{account_address::AccountAddress, identifier::Identifier};
 use move_vm_runtime::native_functions::{make_table_from_iter, NativeFunctionTable};
 use move_vm_types::values::Value;
 use crate::gas::gas::AbstractValueSize;
+use crate::adapt::vm::types::{GasInfo, Storage, Querier};
+
+
+use std::sync::Arc;
+use std::sync::Mutex;
 
 pub mod status {
     // Failure in parsing a struct type tag
@@ -23,14 +28,14 @@ impl GasParameters {
         Self {
             account: account::GasParameters {
                 create_signer: account::CreateSignerGasParameters { base: 0.into() },
-                get_amount: account::GetAmountGasParameters { base: 0.into(), api: 0 },
+                get_amount: account::GetAmountGasParameters { base: 0.into()},
                 transfer_amount: account::TransferAmountGasParameters { base: 0.into() },
             },
         }
     }
 }
-
 pub fn all_natives(
+    querier: Arc<Mutex<Box<dyn Querier + Send +'static>>>,
     framework_addr: AccountAddress,
     gas_params: GasParameters,
 ) -> NativeFunctionTable {
@@ -44,7 +49,7 @@ pub fn all_natives(
         };
     }
 
-    add_natives_from_module!("Account", account::make_all(gas_params.account.clone()));
+    add_natives_from_module!("Account", account::make_all(querier, gas_params.account.clone()));
 
     make_table_from_iter(framework_addr, natives)
 }
