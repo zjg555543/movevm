@@ -49,8 +49,8 @@ pub extern "C" fn say_build(db: Db) {
 }
 
 pub fn test_build(db: Db)-> Result<()> {
-    let path = Some(PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme"));
-    let storage_dir = PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme/storage/");
+    let path = Some(PathBuf::from(r"/Users/oker/move/movevm/contracts/readme"));
+    let storage_dir = PathBuf::from(r"/Users/oker/move/movevm/contracts/readme/storage/");
     let build_config = BuildConfig::default();
     let context = PackageContext::new(&path, &build_config)?;
     let mut state = context.prepare_state(&storage_dir, &storage_dir, db)?;
@@ -74,8 +74,8 @@ pub fn test_publish(module_code: ByteSliceView, sender: ByteSliceView, db: Db)->
 
     println!("sender_params len --- 1:{:?}", sender_params);
 
-    let path = Some(PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme"));
-    let storage_dir = PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme/storage/");
+    let path = Some(PathBuf::from(r"/Users/oker/move/movevm/contracts/readme"));
+    let storage_dir = PathBuf::from(r"/Users/oker/move/movevm/contracts/readme/storage/");
     let build_config = BuildConfig::default();
 
     println!("--------------test_publish-------------- 0 ");
@@ -132,10 +132,10 @@ pub fn test_run(scrpit_code: ByteSliceView, sender: ByteSliceView, db: Db, api: 
     let sender_params = std::str::from_utf8(&temp_sender).unwrap();
 
 
-    let path = Some(PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme"));
-    let storage_dir = PathBuf::from(r"/Users/oker/workspace/move/movevm/contracts/readme/storage/");
+    let path = Some(PathBuf::from(r"/Users/oker/move/movevm/contracts/readme"));
+    let storage_dir = PathBuf::from(r"/Users/oker/move/movevm/contracts/readme/storage/");
     let build_config = BuildConfig::default();
-    // let script_file = Path::new("/Users/oker/workspace/move/movevm/contracts/readme/sources/test_script.move");
+    // let script_file = Path::new("/Users/oker/move/movevm/contracts/readme/sources/test_script.move");
     // let context = PackageContext::new(&path, &build_config)?;
     // let mut state = context.prepare_state(&storage_dir, &storage_dir, db)?;
     let mut state= OnDiskStateView::create(build_config.install_dir
